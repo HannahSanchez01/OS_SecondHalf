@@ -72,7 +72,7 @@ char stack_ts_cv_push (struct ByteBlock * pBlock)
 
 	 while (StackSize >= STACK_MAX_SIZE){ ///// Wait until there is room to push
 	 	pthread_cond_wait(&PushWait, &StackLock);
-		pthread_cond_signal(&PopWait, &StackLock); // if something was trying to pop, signal
+		pthread_cond_signal(&PopWait); // if something was trying to pop, signal
 	 }
 
 	 // Now there is space to push
@@ -103,14 +103,14 @@ char stack_ts_push (struct ByteBlock * pBlock)
 
 struct ByteBlock * stack_ts_cv_pop ()
 {
-    //////////// KYLEE: we must write this function with cond var.
+    ////////////KYLEE: we must write this function with cond var.
 
     pthread_mutex_lock(&StackLock);
 
 	 if (StackSize >= 0){ ///// If there is something to pop
     	StackItems[StackSize] = NULL; // Remove
     	StackSize--;     
-	 	pthread_cond_signal(&PushWait, &StackLock); // signal push because there is room
+	 	pthread_cond_signal(&PushWait); // signal push because there is room
 	 }
 	 else{
 		pthread_cond_wait(&PopWait, &StackLock);
