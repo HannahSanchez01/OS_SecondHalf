@@ -254,6 +254,10 @@ void * thread_consumer (void * pData)
 
 int main (int argc, char *argv[])
 {    
+	 // Start timer
+	 struct timeval start_time;
+	 gettimeofday(&start_time, NULL); //////////////// KYLEE
+
     int     nThreadsProducers;
     int     nThreadsConsumers;   
     int     nIterations;
@@ -273,10 +277,25 @@ int main (int argc, char *argv[])
     }
 
     // TODO: Measure start time here!
-
+    
     nThreadsProducers = atoi(argv[1]);
+	 if (nThreadsProducers <= 0){ ////////////////////////// KYLEE
+		printf("ERROR: Invalid thread number. Enter a value above 0.\n");
+		return -1;
+	 }
+
     nThreadsConsumers = atoi(argv[2]);
+	 if (nThreadsConsumers <= 0){ ////////////////////////// KYLEE
+		printf("ERROR: Invalid thread number. Enter a value above 0.\n");
+		return -2;
+	 }
+
+
     nIterations = atoi(argv[3]);
+	 if (nIterations <= 0){ ////////////////////////// KYLEE
+		printf("ERROR: Invalid iteration number. Enter a value above 0.\n");
+		return -3;
+	 }
 
     pthread_t *     pThreadProducers;
     pthread_t *     pThreadConsumers;
@@ -318,7 +337,12 @@ int main (int argc, char *argv[])
     }
 
     // TODO: Measure stop time here!
+	 struct timeval end_time;
+	 gettimeofday(&end_time, NULL); //////////////// KYLEE
+
+
     //  Output the total runtime in an appropriate unit
+	 printf("Total runtime in microseconds: %ld\n", end_time.tv_usec - start_time.tvusec);   /////////////////////////////// KYLEE
 
     printf("Drumroll please .... %d occurrences of `the'\n", CountFound);
 
