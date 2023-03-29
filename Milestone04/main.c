@@ -27,12 +27,16 @@
 
 /* Use condition variables? */
 //  Uncomment to enable this
-/* #define USE_CONDITION_VARS      */
+#define USE_CONDITION_VARS    ////////////// KYLEE: I uncommented this
 
 
 
 /* The global queue */
 pthread_mutex_t     StackLock;
+
+pthread_cond_t      PushWait = PTHREAD_COND_INITIALIZER; ///////////// KYLEE
+pthread_cond_t      PopWait = PTHREAD_COND_INITIALIZER; ///////////// KYLEE
+
 struct ByteBlock *  StackItems[STACK_MAX_SIZE];
 int                 StackSize = 0;
 char                KeepGoing = 1;
@@ -61,7 +65,20 @@ struct ThreadDataConsume
 char stack_ts_cv_push (struct ByteBlock * pBlock)
 {
     /* Condition variable version */
-    /* Your code goes here! */
+    /* Your code goes here! */ ///////////////// KYLEE: this whole function we write
+	                            ////////////////         cond var method!
+    pthread_mutex_lock(&StackLock);
+
+	 while (StackSize >= STACK_MAX_SIZE){ ///// Wait until there is room to push
+	 	pthread_cond_wait(&PushWait, &StackLock);
+		pthread_cond_signal(&PopWait, &StackLock); // if something was trying to pop, signal
+	 }
+
+	 // Now there is space to push
+    StackItems[StackSize] = pBlock;
+    StackSize++;     
+	 pthread_mutex_unlock(&StackLock);
+
     return 0;
 }
 
@@ -85,6 +102,21 @@ char stack_ts_push (struct ByteBlock * pBlock)
 
 struct ByteBlock * stack_ts_cv_pop ()
 {
+    //////////// KYLEE: we must write this function with cond var.
+
+    pthread_mutex_lock(&StackLock);
+
+	 if (StackSize >= 0){ ///// If there is something to pop
+    	StackItems[StackSize] = NULL; // Remove
+    	StackSize--;     
+	 	pthread_cond_signal(&PushWait, &StackLock); // signal push because there is room
+	 }
+	 else{
+		pthread_cond_wait(&PopWait, &StackLock);
+	 }
+
+	 pthread_mutex_unlock(&StackLock);
+
     return NULL;
 }
 
