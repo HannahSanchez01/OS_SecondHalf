@@ -6,6 +6,8 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/time.h>
+#include <stdint.h>
 
 #include "byteblock.h"
 
@@ -342,7 +344,7 @@ int main (int argc, char *argv[])
 
 
     //  Output the total runtime in an appropriate unit
-	 printf("Total runtime in microseconds: %ld\n", end_time.tv_usec - start_time.tvusec);   /////////////////////////////// KYLEE
+	 printf("Total runtime in microseconds: %ld\n", end_time.tv_usec - start_time.tv_usec);   /////////////////////////////// KYLEE
 
     printf("Drumroll please .... %d occurrences of `the'\n", CountFound);
 
