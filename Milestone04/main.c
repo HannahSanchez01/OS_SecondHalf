@@ -6,8 +6,9 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/time.h>
-#include <stdint.h>
+#include <sys/time.h> //Noah: For time functions
+#include <stdint.h> //Noah: To recognize u_int32 data type
+//Noah: in Makefile, need -D_DEFAULT_SOURCE to recognize strdup() as a function with c99 compiler
 
 #include "byteblock.h"
 
