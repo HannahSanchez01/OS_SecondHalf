@@ -73,8 +73,9 @@ char stack_ts_cv_push (struct ByteBlock * pBlock)
 	 while (StackSize >= STACK_MAX_SIZE){ // Wait until there is room to push
 	 	pthread_cond_wait(&PushWait, &StackLock);
 	 }
+
     printf("Producer condition done\n");
-	 // Now there is space to push
+	// Now there is space to push
      StackItems[StackSize] = pBlock;
      StackSize++;
      pthread_cond_signal(&PopWait); // if something was trying to pop, signal     
@@ -108,11 +109,14 @@ struct ByteBlock * stack_ts_cv_pop ()
     struct ByteBlock * pBlock;
     pthread_mutex_lock(&StackLock);
     printf("Consumer enter condition\n");
-    printf("%d\n",CountDone);
-    printf("%d\n",CountExpected);
-	 while (StackSize <= 0 && CountDone < CountExpected){ //Nothing to pop
+    //printf("%d\n",CountDone);
+    //printf("%d\n",CountExpected);
+	 while (StackSize <= 0 && CountDone < CountExpected){ //Nothing to pop and there is still data to process
+        printf("%d\n",CountDone);
+        printf("%d\n",CountExpected);
         pthread_cond_wait(&PopWait, &StackLock);
 	 }
+
      printf("Consumer condition done\n");
     if(StackSize>0){
         pBlock = StackItems[StackSize-1]; // Remove
@@ -121,8 +125,10 @@ struct ByteBlock * stack_ts_cv_pop ()
         pthread_mutex_unlock(&StackLock);
         return pBlock;
     }
-
-	pthread_mutex_unlock(&StackLock);
+    else
+    {
+        pthread_mutex_unlock(&StackLock);
+    }
 
     return NULL;
 }
@@ -285,6 +291,7 @@ void * thread_consumer (void * pData)
             /* Adjust the completed count */
             pthread_mutex_lock(&DoneLock);
             CountDone++;
+            pthread_cond_broadcast(&PopWait);//Noah: Call all consumers to check condition
             pthread_mutex_unlock(&DoneLock);
         }     
     }
