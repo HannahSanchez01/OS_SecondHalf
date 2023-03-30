@@ -65,22 +65,22 @@ struct ThreadDataConsume
 
 char stack_ts_cv_push (struct ByteBlock * pBlock)
 {
-    /* Condition variable version */
-    /* Your code goes here! */ ///////////////// KYLEE: this whole function we write
-	                            ////////////////         cond var method!
+    // KYLEE: this whole function we write cond var method!
+    //Revised by Noah
+
     pthread_mutex_lock(&StackLock);
-
-	 while (StackSize >= STACK_MAX_SIZE){ ///// Wait until there is room to push
+    printf("Producer entering condition\n");
+	 while (StackSize >= STACK_MAX_SIZE){ // Wait until there is room to push
 	 	pthread_cond_wait(&PushWait, &StackLock);
-		pthread_cond_signal(&PopWait); // if something was trying to pop, signal
 	 }
-
+    printf("Producer condition done\n");
 	 // Now there is space to push
-    StackItems[StackSize] = pBlock;
-    StackSize++;     
+     StackItems[StackSize] = pBlock;
+     StackSize++;
+     pthread_cond_signal(&PopWait); // if something was trying to pop, signal     
 	 pthread_mutex_unlock(&StackLock);
 
-    return 0;
+    return 1;
 }
 
 char stack_ts_push (struct ByteBlock * pBlock)
@@ -103,20 +103,26 @@ char stack_ts_push (struct ByteBlock * pBlock)
 
 struct ByteBlock * stack_ts_cv_pop ()
 {
-    ////////////KYLEE: we must write this function with cond var.
-
+    //KYLEE we must write this function with cond var.
+    //Revised by Noah
+    struct ByteBlock * pBlock;
     pthread_mutex_lock(&StackLock);
-
-	 if (StackSize >= 0){ ///// If there is something to pop
-    	StackItems[StackSize] = NULL; // Remove
-    	StackSize--;     
-	 	pthread_cond_signal(&PushWait); // signal push because there is room
+    printf("Consumer enter condition\n");
+    printf("%d\n",CountDone);
+    printf("%d\n",CountExpected);
+	 while (StackSize <= 0 && CountDone < CountExpected){ //Nothing to pop
+        pthread_cond_wait(&PopWait, &StackLock);
 	 }
-	 else{
-		pthread_cond_wait(&PopWait, &StackLock);
-	 }
+     printf("Consumer condition done\n");
+    if(StackSize>0){
+        pBlock = StackItems[StackSize-1]; // Remove
+        StackSize--;   
+	    pthread_cond_signal(&PushWait); // signal push because there is room
+        pthread_mutex_unlock(&StackLock);
+        return pBlock;
+    }
 
-	 pthread_mutex_unlock(&StackLock);
+	pthread_mutex_unlock(&StackLock);
 
     return NULL;
 }
@@ -214,6 +220,7 @@ void * thread_producer (void * pData)
     }
 
 //    printf("Producer thread %d is done!\n", ThreadID);
+    pthread_cond_broadcast(&PopWait);//Noah: Call all consumers to check condition
     return NULL;
 }
 
@@ -272,7 +279,6 @@ void * thread_consumer (void * pData)
             }
 
             free(pBlock);
-
             /* Mimic this being a really intense computation */
             sleep(DELAY_CONSUMER + ((float) rand() / (float) RAND_MAX) * RAND_DELAY_CONSUMER);
 
