@@ -78,7 +78,7 @@ char stack_ts_cv_push (struct ByteBlock * pBlock)
 	// Now there is space to push
      StackItems[StackSize] = pBlock;
      StackSize++;
-     pthread_cond_signal(&PopWait); // if something was trying to pop, signal     
+     pthread_cond_signal(&PopWait); // if something was trying to pop, signal - at least 1 item on stack     
 	 pthread_mutex_unlock(&StackLock);
 
     return 1;
@@ -118,14 +118,14 @@ struct ByteBlock * stack_ts_cv_pop ()
 	 }
 
      //printf("Consumer condition done\n");
-    if(StackSize>0){
+    if(StackSize>0){//Exit condition and there is something to consume
         pBlock = StackItems[StackSize-1]; // Remove
         StackSize--;   
 	    pthread_cond_signal(&PushWait); // signal push because there is room
         pthread_mutex_unlock(&StackLock);
         return pBlock;
     }
-    else
+    else//Consumer is just exiting since nothing left
     {
         pthread_mutex_unlock(&StackLock);
     }
