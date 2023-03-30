@@ -69,12 +69,12 @@ char stack_ts_cv_push (struct ByteBlock * pBlock)
     //Revised by Noah
 
     pthread_mutex_lock(&StackLock);
-    printf("Producer entering condition\n");
+    //printf("Producer entering condition\n");
 	 while (StackSize >= STACK_MAX_SIZE){ // Wait until there is room to push
 	 	pthread_cond_wait(&PushWait, &StackLock);
 	 }
 
-    printf("Producer condition done\n");
+    //printf("Producer condition done\n");
 	// Now there is space to push
      StackItems[StackSize] = pBlock;
      StackSize++;
@@ -108,16 +108,16 @@ struct ByteBlock * stack_ts_cv_pop ()
     //Revised by Noah
     struct ByteBlock * pBlock;
     pthread_mutex_lock(&StackLock);
-    printf("Consumer enter condition\n");
+    //printf("Consumer enter condition\n");
     //printf("%d\n",CountDone);
     //printf("%d\n",CountExpected);
 	 while (StackSize <= 0 && CountDone < CountExpected){ //Nothing to pop and there is still data to process
-        printf("%d\n",CountDone);
-        printf("%d\n",CountExpected);
+        //printf("%d\n",CountDone);
+        //printf("%d\n",CountExpected);
         pthread_cond_wait(&PopWait, &StackLock);
 	 }
 
-     printf("Consumer condition done\n");
+     //printf("Consumer condition done\n");
     if(StackSize>0){
         pBlock = StackItems[StackSize-1]; // Remove
         StackSize--;   
@@ -159,14 +159,14 @@ void * thread_producer (void * pData)
     int     IterationsToGo;
     int     nRandom;
     struct ByteBlock *  pBlock;
-    int     ThreadID;
+    //int     ThreadID;
 
     struct ThreadDataProduce * pThreadData;
 
     pThreadData = (struct ThreadDataProduce *) pData;
 
     IterationsToGo = pThreadData->Iterations;
-    ThreadID = pThreadData->ThreadID;
+    //ThreadID = pThreadData->ThreadID;
 
     /* Copied - get rid of the malloc'd allocation */
     free(pThreadData);
@@ -236,11 +236,11 @@ void * thread_consumer (void * pData)
     struct ThreadDataConsume * pThreadData;
     char * SearchString;
     struct ByteBlock * pBlock;
-    int     ThreadID;
+    //int     ThreadID;
 
     pThreadData = (struct ThreadDataConsume *) pData;
 
-    ThreadID = pThreadData->ThreadID;
+    //ThreadID = pThreadData->ThreadID;
     SearchString = (char *) pThreadData->SearchString;
 
     /* Copied - get rid of the malloc'd allocation */
