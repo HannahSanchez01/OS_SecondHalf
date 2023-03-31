@@ -390,7 +390,8 @@ int main (int argc, char *argv[])
 
 
     //  Output the total runtime in an appropriate unit
-	 printf("Total runtime in microseconds: %ld\n", end_time.tv_usec - start_time.tv_usec);   /////////////////////////////// KYLEE
+    long x = 1000000*(end_time.tv_sec-start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec); /////Hannah
+	 printf("Total runtime in microseconds: %ld\n", x);   /////////////////////////////// KYLEE
 
     printf("Drumroll please .... %d occurrences of `the'\n", CountFound);
 
