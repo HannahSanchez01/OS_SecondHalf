@@ -1,0 +1,46 @@
+ncorcora@student10:~/Project04$ ./redextract TestSmall.pcap
+MAIN: Initializing the table for redundancy extraction
+MAIN: Initializing the table for redundancy extraction ... done
+MAIN: Attempting to read in the file named TestSmall.pcap
+tcpdump file initial information
+   Major: 2   Minor: 4   Endian Flip: No
+   Snapshot Len: 524288   Medium Type: 1
+Packet 0 Info: t=1680359013.00858343 of 54 bytes long (54 on the wire)
+STARTFUNC: processPacket (Packet Size 54)
+Packet 1 Info: t=1680359013.00962924 of 1442 bytes long (1442 on the wire)
+STARTFUNC: processPacket (Packet Size 1442)
+  processPacket -> Found an IP packet that is TCP or UDP
+Packet 2 Info: t=1680359013.00962926 of 1442 bytes long (1442 on the wire)
+STARTFUNC: processPacket (Packet Size 1442)
+  processPacket -> Found an IP packet that is TCP or UDP
+Packet 3 Info: t=1680359013.00962927 of 1442 bytes long (1442 on the wire)
+STARTFUNC: processPacket (Packet Size 1442)
+  processPacket -> Found an IP packet that is TCP or UDP
+Packet 4 Info: t=1680359013.00963151 of 54 bytes long (54 on the wire)
+STARTFUNC: processPacket (Packet Size 54)
+File processing complete - TestSmall.pcap file read containing 5 packets with 4434 bytes of packet data
+MAIN: Attempting to read in the file named TestSmall.pcap again
+tcpdump file initial information
+   Major: 2   Minor: 4   Endian Flip: No
+   Snapshot Len: 524288   Medium Type: 1
+Packet 0 Info: t=1680359013.00858343 of 54 bytes long (54 on the wire)
+STARTFUNC: processPacket (Packet Size 54)
+Packet 1 Info: t=1680359013.00962924 of 1442 bytes long (1442 on the wire)
+STARTFUNC: processPacket (Packet Size 1442)
+  processPacket -> Found an IP packet that is TCP or UDP
+Packet 2 Info: t=1680359013.00962926 of 1442 bytes long (1442 on the wire)
+STARTFUNC: processPacket (Packet Size 1442)
+  processPacket -> Found an IP packet that is TCP or UDP
+Packet 3 Info: t=1680359013.00962927 of 1442 bytes long (1442 on the wire)
+STARTFUNC: processPacket (Packet Size 1442)
+  processPacket -> Found an IP packet that is TCP or UDP
+Packet 4 Info: t=1680359013.00963151 of 54 bytes long (54 on the wire)
+STARTFUNC: processPacket (Packet Size 54)
+File processing complete - TestSmall.pcap file read containing 5 packets with 4434 bytes of packet data
+Summarizing the processed entries
+Parsing of file TestSmall.pcap complete
+  Total Packets Parsed:    10
+  Total Bytes   Parsed:    8868
+  Total Packets Duplicate: 3
+  Total Bytes   Duplicate: 4092
+  Total Duplicate Percent:  46.14%

@@ -68,8 +68,8 @@ void * thread_producer(void * pData){
 		if(pPacket != NULL){
      		StackItems[StackSize] = pPacket;
      		StackSize++;
+			pthread_cond_signal(&PopWait); // if something was trying to pop, signal - at least 1 item on stack     
 		}
-     	pthread_cond_signal(&PopWait); // if something was trying to pop, signal - at least 1 item on stack     
 	 	pthread_mutex_unlock(&StackLock);
 	}
 	pthread_mutex_lock(&StackLock);
@@ -82,8 +82,8 @@ void * thread_producer(void * pData){
 }
 
 void * thread_consumer(void * pData){
+	struct Packet * pPacket;
 	while(KeepGoing){
-    	struct Packet * pPacket;
     	pthread_mutex_lock(&StackLock);
 	 	while (StackSize <= 0 && KeepGoing){ //Nothing to pop and there is still data to process
         	pthread_cond_wait(&PopWait, &StackLock);
@@ -277,6 +277,11 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
 		pthread_create(pThreadConsumers+j,0,thread_consumer,NULL);
 	}
 
+	for(j=0; j<NUM_PRODUCERS; j++)
+    {
+        pthread_join(pThreadProducers[j], NULL);
+    }
+
 	for(j=0; j<NUM_CONSUMERS; j++)
     {
         pthread_join(pThreadConsumers[j], NULL);
@@ -284,6 +289,3 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
 
 	return 1;
 }
-
-
-
