@@ -31,7 +31,77 @@ pthread_cond_t PopWait = PTHREAD_COND_INITIALIZER;
 struct Packet * StackItems[STACK_MAX_SIZE];//Queue for producer-consumer
 
 char KeepGoing = 1;//Boolean to determine when producers stop - warns consumers to exit
+int  StackSize = 0;
 
+void * thread_producer(void * pData){
+	//Noah - Makes sense for 1 producer but not sure how to make this work with multiple producers due to reading from a file 
+	//can't use same file pointer in different threads
+	//Maybe optimal # of threads depends on how fast consumers can process the data compared to the speed of the single producer?
+	struct FilePcapInfo * pFileInfo = (struct FilePcapInfo *) pData;
+	FILE * pTheFile;//File Pointer
+	struct Packet * pPacket;
+
+	/* Default is to not flip due to endian-ness issues */
+	pFileInfo->EndianFlip = 0;
+
+	/* Reset the counters */
+	pFileInfo->Packets = 0;
+	pFileInfo->BytesRead = 0;
+
+	/* Open the file and its respective front matter */
+	pTheFile = fopen(pFileInfo->FileName, "r");
+
+	/* Read the front matter */
+	if(!parsePcapFileStart(pTheFile, pFileInfo))
+	{
+		printf("* Error: Failed to parse front matter on pcap file %s\n", pFileInfo->FileName);
+		return 0;
+	}
+	while(!feof(pTheFile))//File ending is the end of producing
+	{	
+    	pthread_mutex_lock(&StackLock);
+		while (StackSize >= STACK_MAX_SIZE){ // Wait until there is room to push
+	 		pthread_cond_wait(&PushWait, &StackLock);
+	 	}
+		// Now there is space to push
+		pPacket = readNextPacket(pTheFile, pFileInfo);//Do work to get packet
+		if(pPacket != NULL){
+     		StackItems[StackSize] = pPacket;
+     		StackSize++;
+		}
+     	pthread_cond_signal(&PopWait); // if something was trying to pop, signal - at least 1 item on stack     
+	 	pthread_mutex_unlock(&StackLock);
+	}
+	pthread_mutex_lock(&StackLock);
+	KeepGoing = 0;
+	pthread_cond_broadcast(&PopWait);//Noah: Call all consumers to check condition
+	pthread_mutex_unlock(&StackLock);
+	fclose(pTheFile);
+	printf("File processing complete - %s file read containing %d packets with %d bytes of packet data\n", pFileInfo->FileName, pFileInfo->Packets, pFileInfo->BytesRead);
+	return NULL;
+}
+
+void * thread_consumer(void * pData){
+	while(KeepGoing){
+    	struct Packet * pPacket;
+    	pthread_mutex_lock(&StackLock);
+	 	while (StackSize <= 0 && KeepGoing){ //Nothing to pop and there is still data to process
+        	pthread_cond_wait(&PopWait, &StackLock);
+	 	}
+    	if(StackSize>0){//Exit condition and there is something to consume
+        	pPacket = StackItems[StackSize-1]; // Remove
+        	StackSize--;
+			processPacket(pPacket);//Do the work: Processes packets in pcap-process.c (Producer Null checks already)   
+	    	pthread_cond_signal(&PushWait); // signal push because there is room
+        	pthread_mutex_unlock(&StackLock);
+    	}
+    	else//Consumer is just exiting since nothing left
+    	{
+        	pthread_mutex_unlock(&StackLock);
+    	}
+	}
+	return NULL;
+}
 
 char parsePcapFileStart (FILE * pTheFile, struct FilePcapInfo * pFileInfo)
 {
@@ -195,8 +265,8 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
     pthread_t *     pThreadConsumers;
 
     /* Allocate space for tracking the threads */
-    pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * nThreadsProducers); 
-    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * nThreadsConsumers); 
+    pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
+    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS); 
 	
 	for(j = 0; j<NUM_PRODUCERS; j++)
 	{
@@ -213,75 +283,6 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
     }
 
 	return 1;
-}
-void * thread_producer(void * pData){
-	//Noah - Makes sense for 1 producer but not sure how to make this work with multiple producers due to reading from a file 
-	//can't use same file pointer in different threads
-	//Maybe optimal # of threads depends on how fast consumers can process the data compared to the speed of the single producer?
-	pFileInfo = (struct FilePcapInfo *) pData;
-	FILE * pTheFile;//File Pointer
-	struct Packet * pPacket;
-
-	/* Default is to not flip due to endian-ness issues */
-	pFileInfo->EndianFlip = 0;
-
-	/* Reset the counters */
-	pFileInfo->Packets = 0;
-	pFileInfo->BytesRead = 0;
-
-	/* Open the file and its respective front matter */
-	pTheFile = fopen(pFileInfo->FileName, "r");
-
-	/* Read the front matter */
-	if(!parsePcapFileStart(pTheFile, pFileInfo))
-	{
-		printf("* Error: Failed to parse front matter on pcap file %s\n", pFileInfo->FileName);
-		return 0;
-	}
-	while(!feof(pTheFile))//File ending is the end of producing
-	{	
-    	pthread_mutex_lock(&StackLock);
-		while (StackSize >= STACK_MAX_SIZE){ // Wait until there is room to push
-	 		pthread_cond_wait(&PushWait, &StackLock);
-	 	}
-		// Now there is space to push
-		pPacket = readNextPacket(pTheFile, pFileInfo);//Do work to get packet
-		if(pPacket != NULL){
-     		StackItems[StackSize] = pPacket;
-     		StackSize++;
-		}
-     	pthread_cond_signal(&PopWait); // if something was trying to pop, signal - at least 1 item on stack     
-	 	pthread_mutex_unlock(&StackLock);
-	}
-	pthread_mutex_lock(&StackLock);
-	KeepGoing = 0;
-	pthread_cond_broadcast(&PopWait);//Noah: Call all consumers to check condition
-	pthread_mutex_unlock(&StackLock);
-	fclose(pTheFile);
-	printf("File processing complete - %s file read containing %d packets with %d bytes of packet data\n", pFileInfo->FileName, pFileInfo->Packets, pFileInfo->BytesRead);
-	return NULL;
-}
-
-void * thread_consumer(void * pData){
-	while(KeepGoing){
-    	struct Packet * pPacket;
-    	pthread_mutex_lock(&StackLock);
-	 	while (StackSize <= 0 && KeepGoing){ //Nothing to pop and there is still data to process
-        	pthread_cond_wait(&PopWait, &StackLock);
-	 	}
-    	if(StackSize>0){//Exit condition and there is something to consume
-        	pPacket = StackItems[StackSize-1]; // Remove
-        	StackSize--;
-			processPacket(pPacket);//Do the work: Processes packets in pcap-process.c (Producer Null checks already)   
-	    	pthread_cond_signal(&PushWait); // signal push because there is room
-        	pthread_mutex_unlock(&StackLock);
-    	}
-    	else//Consumer is just exiting since nothing left
-    	{
-        	pthread_mutex_unlock(&StackLock);
-    	}
-	}
-	return NULL;
 }
 
 
