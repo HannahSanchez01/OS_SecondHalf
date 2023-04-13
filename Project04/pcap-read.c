@@ -48,6 +48,8 @@ void * thread_producer(void * pData){
 	pFileInfo->Packets = 0;
 	pFileInfo->BytesRead = 0;
 
+	//printf("Max Packets %d\n", pFileInfo->MaxPackets);
+
 	/* Open the file and its respective front matter */
 	pTheFile = fopen(pFileInfo->FileName, "r");
 
@@ -70,6 +72,16 @@ void * thread_producer(void * pData){
      		StackSize++;
 			pthread_cond_signal(&PopWait); // if something was trying to pop, signal - at least 1 item on stack     
 		}
+		if(pFileInfo->MaxPackets != 0)
+		{
+			if(pFileInfo->Packets >= pFileInfo->MaxPackets)
+			{
+				KeepGoing = 0;
+				pthread_cond_broadcast(&PopWait);//Noah: Call all consumers to check condition
+				pthread_mutex_unlock(&StackLock);
+				return NULL;
+			}
+		}
 	 	pthread_mutex_unlock(&StackLock);
 	}
 	pthread_mutex_lock(&StackLock);
@@ -83,7 +95,7 @@ void * thread_producer(void * pData){
 
 void * thread_consumer(void * pData){
 	struct Packet * pPacket;
-	while(KeepGoing){
+	while(KeepGoing || StackSize>0){
     	pthread_mutex_lock(&StackLock);
 	 	while (StackSize <= 0 && KeepGoing){ //Nothing to pop and there is still data to process
         	pthread_cond_wait(&PopWait, &StackLock);
@@ -266,7 +278,8 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
 
     /* Allocate space for tracking the threads */
     pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
-    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS); 
+    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS);
+	KeepGoing = 1;//Reset for second iteration of reading file
 	
 	for(j = 0; j<NUM_PRODUCERS; j++)
 	{
