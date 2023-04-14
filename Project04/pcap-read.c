@@ -124,7 +124,21 @@ char parsePcapFileStart (FILE * pTheFile, struct FilePcapInfo * pFileInfo)
 	//
 	//  Also see:
 	//	 http://wiki.wireshark.org/Development/LibpcapFileFormat
-		
+
+	/* Check if FILE pointer is valid */
+	if(pTheFile == NULL) 
+	{ 
+	    printf("* Error (parsePcapFileStart): FILE pointer was NULL\n"); 
+		 return 0; 
+	}
+	
+	/* Check if pFileInfo is valid */
+	if(pFileInfo == NULL) 
+	{ 
+		printf("* Error (parsePcapFileStart): F was NULL\n"); 
+		return 0; 
+	} 
+
 	int					nMagicNum;
 	unsigned short		nMajor;
 	unsigned short		nMinor;
