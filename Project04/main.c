@@ -67,14 +67,37 @@ int main (int argc, char *argv[])
     theInfo.Packets = 0;
     theInfo.MaxPackets = 5;
 
-    printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
-    readPcapFile(&theInfo);
+    //Hannah
+    if (theInfo.FileName[strlen(theInfo.FileName)-1] != 'p'){
+        FILE *fp = fopen(theInfo.FileName, "r");
+        char buf[256];
+        while(1){
+            fgets(buf, 256, fp);
+            if (feof(fp)){
+                break;
+            }
+            buf[strcspn(buf, "\n")] = 0;
+            theInfo.FileName = strdup(buf);
+            printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
+            readPcapFile(&theInfo);
 
-    printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-    readPcapFile(&theInfo);
+            printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+            readPcapFile(&theInfo);
 
-    printf("Summarizing the processed entries\n");
-    tallyProcessing();
+            printf("Summarizing the processed entries\n");
+            tallyProcessing();
+        }
+    }
+    else{
+        printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
+        readPcapFile(&theInfo);
+
+        printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+        readPcapFile(&theInfo);
+
+        printf("Summarizing the processed entries\n");
+        tallyProcessing();
+    }
 
     /* Output the statistics */
 
