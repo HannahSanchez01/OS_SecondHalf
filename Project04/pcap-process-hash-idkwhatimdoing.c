@@ -5,7 +5,7 @@
 
 
 #include "pcap-process.h"
-//#include "ht.c" // 
+#include "ht.c" // Kylee
 
 /* How many packets have we seen? */
 uint32_t        gPacketSeenCount;
@@ -20,9 +20,12 @@ uint32_t        gPacketHitCount;
 uint64_t        gPacketHitBytes;
 
 /* Our big table for recalling packets */
-struct PacketEntry *    BigTable; 
-int    BigTableSize;
-int    BigTableNextToReplace;
+//struct PacketEntry *    BigTable; 
+//int    BigTableSize;
+//int    BigTableNextToReplace;
+
+/* HASH TABLE FOR RECALLING PACKETS */
+ht* counts = ht_create(); // Kylee
 
 
 /// Kylee // Hash table by Ben Hoyt https://benhoyt.com/writings/hash-table-in-c/
@@ -223,6 +226,13 @@ void processPacket (struct Packet * pPacket)
 
     /* Step 2: Do any packet payloads match up? */
 
+	 // Bytes match?
+
+
+
+
+
+/*
     int j;
 
     for(j=0; j<BigTableSize; j++)
@@ -231,41 +241,41 @@ void processPacket (struct Packet * pPacket)
         {
             int k;
 
-            /* Are the sizes the same? */
+            // Are the sizes the same? 
             if(BigTable[j].ThePacket->PayloadSize != pPacket->PayloadSize)
             {
                 continue;
             }
 
-            /* OK - same size - do the bytes match up? */
+            // OK - same size - do the bytes match up? 
             for(k=0; k<BigTable[j].ThePacket->PayloadSize; k++)
             {
                 if(BigTable[j].ThePacket->Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
                 {
-                    /* Nope - they are not the same */
+                    // Nope - they are not the same 
                     break;
                 }
             }
 
-            /* Did we break out with a mismatch? */
+            // Did we break out with a mismatch? 
             if(k < BigTable[j].ThePacket->PayloadSize)
             {
                 continue;
             }
             else 
             {
-                /* Whoot, whoot - the payloads match up */
+                // Whoot, whoot - the payloads match up 
                 BigTable[j].HitCount++;
                 BigTable[j].RedundantBytes += pPacket->PayloadSize;
 
-                /* The packets match so get rid of the matching one */
+                // The packets match so get rid of the matching one 
                 discardPacket(pPacket);
                 return;
             }
         }
         else 
         {
-            /* We made it to an empty entry without a match */
+            // We made it to an empty entry without a match 
             
             BigTable[j].ThePacket = pPacket;
             BigTable[j].HitCount = 0;
@@ -274,26 +284,24 @@ void processPacket (struct Packet * pPacket)
         }
     }
 
-    /* Did we search the entire table and find no matches? */
+    // Did we search the entire table and find no matches? 
     if(j == BigTableSize)
     {
-        /* Kick out the "oldest" entry by saving its entry to the global counters and 
-           free up that packet allocation 
-         */
+        // Kick out the "oldest" entry by saving its entry to the global counters and 
+          // free up that packet allocation 
+         
         resetAndSaveEntry(BigTableNextToReplace);
 
-        /* Take ownership of the packet */
+        // Take ownership of the packet 
         BigTable[BigTableNextToReplace].ThePacket = pPacket;
-	 }
-}
-void tallyProcessing ()
+oid tallyProcessing ()
 {
     for(int j=0; j<BigTableSize; j++)
     {
         resetAndSaveEntry(j);
     }
 }
-
+*/
 
 
 

@@ -13,8 +13,9 @@ char * strdup(const char *s);
 
 
 int main (int argc, char *argv[])
-{ 
-    if(argc < 2)
+{
+	 
+    if(argc < 2 || argc > 4 || argc == 3) 
     {
         printf("Usage: redextract FileX\n");
         printf("       redextract FileX\n");
@@ -32,6 +33,19 @@ int main (int argc, char *argv[])
         printf("       If not specified, the optimal setting will be used\n");
         return -1;
     }
+	 else if ( argc == 4 ){ 
+	 	  if (strcmp( "-threads", argv[2]) != 0)
+		  {
+		      printf(" -threads is the only valid flag\n");
+				return -1;
+		  }
+	 	  int num_threads = atoi(argv[3]);
+		  if (num_threads < 2 || num_threads > 8){
+            printf("  -threads N       Number of threads to use (2 to 8)\n");
+				return -1;
+		  }
+	 }
+		
 
     printf("MAIN: Initializing the table for redundancy extraction\n");
     initializeProcessing(DEFAULT_TABLE_SIZE);
