@@ -83,9 +83,11 @@ int main (int argc, char *argv[])
 
             printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
             readPcapFile(&theInfo);
-
+				
+				/*
             printf("Summarizing the processed entries\n");
             tallyProcessing();
+				*/
         }
     }
     else{
@@ -94,9 +96,11 @@ int main (int argc, char *argv[])
 
         printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
         readPcapFile(&theInfo);
-
+			
+		  /*
         printf("Summarizing the processed entries\n");
         tallyProcessing();
+		  */
     }
 
     /* Output the statistics */

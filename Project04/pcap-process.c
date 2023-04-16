@@ -243,7 +243,9 @@ void processPacket (struct Packet * pPacket)
     /* Step 2: Do any packet payloads match up? */
 	 
 	 ENTRY entry;
-	 entry.key = strdup(hash);
+	 char string_data[5];
+	 sprintf(string_data, "%hhn", pPacket->Data);
+	 entry.key = string_data;;
 	 entry.data = pPacket->Data;
 
 	 void* pointer = hsearch( entry, FIND); 
