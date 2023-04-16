@@ -7,6 +7,7 @@
 char * strdup(const char *s);
 
 #include <string.h>
+#include <search.h>
 
 #include "pcap-read.h"
 #include "pcap-process.h"
@@ -102,6 +103,8 @@ int main (int argc, char *argv[])
         tallyProcessing();
 		  */
     }
+
+	 hdestroy();
 
     /* Output the statistics */
 
