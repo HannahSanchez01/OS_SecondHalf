@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <string.h>
 
 #include <search.h> // Kylee
 // need to use hcreate, hsearch, and hdestroy
@@ -24,8 +23,7 @@ uint32_t        gPacketHitCount;
 uint64_t        gPacketHitBytes;
 
 /* Our big table for recalling packets */
-//struct PacketEntry *    BigTable; 
-int BigTable;
+struct PacketEntry *    BigTable; 
 int    BigTableSize;
 int    BigTableNextToReplace;
 
@@ -85,39 +83,29 @@ char initializeProcessing (int TableSize)
     initializeProcessingStats();
 
     /* Allocate our big table */
-    //BigTable = (struct PacketEntry *) malloc(sizeof(struct PacketEntry) * TableSize);
+    BigTable = (struct PacketEntry *) malloc(sizeof(struct PacketEntry) * TableSize);
     
-	 /*
+	 // BigTable is now a HASH table
+
+
     if(BigTable == NULL)
     {
         printf("* Error: Unable to create the new table\n");
         return 0;
     }
-	 */
-	 
-	 // BigTable is now a HASH table
-	 BigTable = hcreate(TableSize);
 
-	 // Check hash table failure
-	 if (BigTable == 0){
-	 	 printf("* Error: Error creating the hash table\n");
-		 return 0;
-	 }
-
-	 /*
     for(int j=0; j<TableSize; j++)
     {
         BigTable[j].ThePacket = NULL;
         BigTable[j].HitCount  = 0;
         BigTable[j].RedundantBytes = 0;
     }
-	 */
 
     BigTableSize = TableSize;
     BigTableNextToReplace = 0;
     return 1;
 }
-/*
+
 void resetAndSaveEntry (int nEntry)
 {
     if(nEntry < 0 || nEntry >= BigTableSize)
@@ -139,7 +127,6 @@ void resetAndSaveEntry (int nEntry)
     BigTable[nEntry].RedundantBytes = 0;
     BigTable[nEntry].ThePacket = NULL;
 }
-*/
 
 void processPacket (struct Packet * pPacket)
 {
@@ -241,30 +228,7 @@ void processPacket (struct Packet * pPacket)
     pPacket->PayloadSize = NetPayload;
 
     /* Step 2: Do any packet payloads match up? */
-	 
-	 ENTRY entry;
-	 entry.key = strdup(hash);
-	 entry.data = pPacket->Data;
 
-	 void* pointer = hsearch( entry, FIND); 
-	 
-	 if (pointer == NULL) // entry not found
-	 {
-	    // try to add to the hash table
-		 pointer = hsearch( entry, ENTER);
-
-		 if (pointer == NULL) // could not add to the hash table
-		 {
-	    	 free(entry.key);
-		 }
-	 }
-	 else
-	 {
-	 	 gPacketHitCount ++;
-		 gPacketHitBytes += pPacket->PayloadSize;
-	 }
-	 
-	 /*
     int j;
 
     for(j=0; j<BigTableSize; j++)
@@ -273,41 +237,41 @@ void processPacket (struct Packet * pPacket)
         {
             int k;
 
-            // Are the sizes the same? 
+            /* Are the sizes the same? */
             if(BigTable[j].ThePacket->PayloadSize != pPacket->PayloadSize)
             {
                 continue;
             }
 
-            // OK - same size - do the bytes match up? 
+            /* OK - same size - do the bytes match up? */
             for(k=0; k<BigTable[j].ThePacket->PayloadSize; k++)
             {
                 if(BigTable[j].ThePacket->Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
                 {
-                    // Nope - they are not the same
+                    /* Nope - they are not the same */
                     break;
                 }
             }
 
-            // Did we break out with a mismatch? 
+            /* Did we break out with a mismatch? */
             if(k < BigTable[j].ThePacket->PayloadSize)
             {
                 continue;
             }
             else 
             {
-                // Whoot, whoot - the payloads match up
+                /* Whoot, whoot - the payloads match up */
                 BigTable[j].HitCount++;
                 BigTable[j].RedundantBytes += pPacket->PayloadSize;
 
-                // The packets match so get rid of the matching one 
+                /* The packets match so get rid of the matching one */
                 discardPacket(pPacket);
                 return;
             }
         }
         else 
         {
-            // We made it to an empty entry without a match 
+            /* We made it to an empty entry without a match */
             
             BigTable[j].ThePacket = pPacket;
             BigTable[j].HitCount = 0;
@@ -316,21 +280,18 @@ void processPacket (struct Packet * pPacket)
         }
     }
 
-    // Did we search the entire table and find no matches? 
+    /* Did we search the entire table and find no matches? */
     if(j == BigTableSize)
     {
-        / Kick out the "oldest" entry by saving its entry to the global counters and 
+        /* Kick out the "oldest" entry by saving its entry to the global counters and 
            free up that packet allocation 
-         
+         */
         resetAndSaveEntry(BigTableNextToReplace);
 
-        // Take ownership of the packet 
+        /* Take ownership of the packet */
         BigTable[BigTableNextToReplace].ThePacket = pPacket;
 	 }
-	 */
 }
-
-/*
 void tallyProcessing ()
 {
     for(int j=0; j<BigTableSize; j++)
@@ -338,7 +299,6 @@ void tallyProcessing ()
         resetAndSaveEntry(j);
     }
 }
-*/
 
 
 

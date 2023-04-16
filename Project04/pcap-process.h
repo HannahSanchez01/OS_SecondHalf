@@ -37,7 +37,8 @@ struct PacketEntry
 };
 
 /* Our big table for recalling packets */
-extern struct PacketEntry *    BigTable; 
+//extern struct PacketEntry *    BigTable; 
+extern int BigTable;
 extern int    BigTableSize;
 extern int    BigTableNextToReplace;
 
