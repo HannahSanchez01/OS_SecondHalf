@@ -185,7 +185,7 @@ void processPacket (struct Packet * pPacket)
     /* Step 2: Do any packet payloads match up? */
 	 
 	 ENTRY entry;
-	 char string_data[pPacket->PayloadSize];
+	 char string_data[pPacket->SizeDataMax];
 	 sprintf(string_data, "%hhn", pPacket->Data);
 	 entry.key = string_data;
 	 entry.data = pPacket;
