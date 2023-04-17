@@ -142,7 +142,7 @@ void * thread_consumer(void * pData){
         	pthread_cond_wait(&PopWait, &StackLock);
 	 	}
     	if(StackSize>0){//Exit condition and there is something to consume
-			printf("Consumer\n");
+			//printf("Consumer\n");
         	pPacket = StackItems[StackSize-1]; // Remove
         	StackSize--;
 			processPacket(pPacket);//Do the work: Processes packets in pcap-process.c (Producer Null checks already)   

@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
         printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
         readPcapFile(&theInfo);
 		//free(theInfo.FileName);
-        hdestroy();
+        //hdestroy();
 
        printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
         readPcapFile(&theInfo);

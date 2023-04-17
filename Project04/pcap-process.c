@@ -88,7 +88,6 @@ void processPacket (struct Packet * pPacket)
 
     PayloadOffset = 0;
 
-    printf("Packet Info: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pPacket->TimeCapture.tv_sec, (int) pPacket->TimeCapture.tv_usec, pPacket->LengthIncluded, pPacket->LengthOriginal);
 
     /* Do a bit of error checking */
     if(pPacket == NULL)
@@ -186,12 +185,12 @@ void processPacket (struct Packet * pPacket)
     /* Step 2: Do any packet payloads match up? */
 	 
 	 ENTRY entry;
-	 char string_data[5];
+	 char string_data[pPacket->PayloadSize];
 	 sprintf(string_data, "%hhn", pPacket->Data);
 	 entry.key = string_data;
 	 entry.data = pPacket;
 
-	 ENTRY * pointer1 = hsearch( entry, FIND); 
+	 ENTRY * pointer1 = hsearch( entry, FIND);
 	 ENTRY * pointer2;
      int k;
      struct Packet * pData;
@@ -200,6 +199,8 @@ void processPacket (struct Packet * pPacket)
 	 {
 	    // try to add to the hash table
 		 pointer2 = hsearch( entry, ENTER);
+         pData = (struct Packet *) pointer2->data;
+         printf("PACKET ENTER TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
 
 		 if (pointer2 == NULL) // could not add to the hash table
 		 {
@@ -209,6 +210,8 @@ void processPacket (struct Packet * pPacket)
      else
      {
         pData = (struct Packet *) pointer1->data; //Cast data to pPacket
+        printf("PACKET RETURNED FROM TABLE t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
+        printf("PACKET SEARCHED FROM TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pPacket->TimeCapture.tv_sec, (int) pPacket->TimeCapture.tv_usec, pPacket->LengthIncluded, pPacket->LengthOriginal);
         // do the bytes match up? 
             for(k=0; k<pData->PayloadSize; k++)
             {
@@ -220,6 +223,7 @@ void processPacket (struct Packet * pPacket)
             }
             if(k>=pData->PayloadSize)//Match
             {
+                printf("Match\n");
                 gPacketHitCount ++;
                 gPacketHitBytes += pPacket -> PayloadSize;
                 discardPacket(pPacket);
