@@ -11,52 +11,14 @@ char * strdup(const char *s);
 #include <pthread.h>
 
 #include "pcap-read.h"
-#include "pcap-read.c"
+//#include "pcap-read.c"
 #include "pcap-process.h"
 
-// For threading
-#define NUM_PRODUCERS 1
-#define NUM_CONSUMERS 1
-
-
-// moved noah's contributions from pcap-read to main
-char readPcapFile (struct FilePcapInfo * pFileInfo){
-	int j;
-
-	//Noah
-	pthread_t *     pThreadProducers;
-    pthread_t *     pThreadConsumers;
-
-    // Allocate space for tracking the threads 
-    pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
-    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS);
-	KeepGoing = 1;//Reset for second iteration of reading file
-	
-	for(j = 0; j<NUM_PRODUCERS; j++)
-	{
-		pthread_create(pThreadProducers+j,0,thread_producer,pFileInfo);
-	}
-
-	for(j=0; j<NUM_CONSUMERS;j++){
-		pthread_create(pThreadConsumers+j,0,thread_consumer,NULL);
-	}
-
-	for(j=0; j<NUM_PRODUCERS; j++)
-    {
-        pthread_join(pThreadProducers[j], NULL);
-    }
-
-	for(j=0; j<NUM_CONSUMERS; j++)
-    {
-        pthread_join(pThreadConsumers[j], NULL);
-    }
-	 return 1;
-}
 
 
 int main (int argc, char *argv[])
 {
-	 
+	 int num_threads;
     if(argc < 2 || argc > 4 || argc == 3) 
     {
         printf("Usage: redextract FileX\n");
@@ -81,7 +43,7 @@ int main (int argc, char *argv[])
 		      printf(" -threads is the only valid flag\n");
 				return -1;
 		  }
-	 	  int num_threads = atoi(argv[3]);
+	 	  num_threads = atoi(argv[3]);
 		  if (num_threads < 2 || num_threads > 8){
             printf("  -threads N       Number of threads to use (2 to 8)\n");
 				return -1;
@@ -108,6 +70,7 @@ int main (int argc, char *argv[])
     theInfo.BytesRead = 0;
     theInfo.Packets = 0;
     theInfo.MaxPackets = 5;
+    theInfo.numThreads = num_threads;
 
     //Hannah
     if (theInfo.FileName[strlen(theInfo.FileName)-1] != 'p'){
@@ -124,27 +87,25 @@ int main (int argc, char *argv[])
             readPcapFile(&theInfo);
 				free(theInfo.FileName);
 
-           // printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-            //readPcapFile(&theInfo);
+           printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+           readPcapFile(&theInfo);
 				
-				/*
             printf("Summarizing the processed entries\n");
             tallyProcessing();
-				*/
         }
     }
     else{
         printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
         readPcapFile(&theInfo);
-		  free(theInfo.FileName);
+		//free(theInfo.FileName);
 
-       // printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-        //readPcapFile(&theInfo);
+       printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+        readPcapFile(&theInfo);
 			
-		  /*
+		  
         printf("Summarizing the processed entries\n");
         tallyProcessing();
-		  */
+		
     }
 
 	 hdestroy();

@@ -12,6 +12,8 @@ struct FilePcapInfo
 {
 	char * 		FileName;
 	char 		EndianFlip;
+	
+	int			numThreads;
 
 	/* Zero means read until the end, non-zero if limited */
 	uint32_t 	MaxPackets;

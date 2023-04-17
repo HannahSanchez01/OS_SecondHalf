@@ -21,8 +21,6 @@
 
 //Noah
 #define STACK_MAX_SIZE 10
-//#define NUM_PRODUCERS 1
-//#define NUM_CONSUMERS 1
 
 pthread_mutex_t StackLock;//Similar idea to milestone 4
 pthread_cond_t PushWait = PTHREAD_COND_INITIALIZER;
@@ -32,6 +30,46 @@ struct Packet * StackItems[STACK_MAX_SIZE];//Queue for producer-consumer
 
 char KeepGoing = 1;//Boolean to determine when producers stop - warns consumers to exit
 int  StackSize = 0;
+
+// For threading
+int NUM_PRODUCERS =  1;
+int NUM_CONSUMERS = 1;
+
+//Noah
+char readPcapFile (struct FilePcapInfo * pFileInfo){
+	int j;
+
+	//Noah
+	pthread_t *     pThreadProducers;
+    pthread_t *     pThreadConsumers;
+
+	NUM_CONSUMERS = pFileInfo->numThreads-1;
+
+    // Allocate space for tracking the threads 
+    pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
+    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS);
+	KeepGoing = 1;//Reset for second iteration of reading file
+	
+	for(j = 0; j<NUM_PRODUCERS; j++)
+	{
+		pthread_create(pThreadProducers+j,0,thread_producer,pFileInfo);
+	}
+
+	for(j=0; j<NUM_CONSUMERS;j++){
+		pthread_create(pThreadConsumers+j,0,thread_consumer,NULL);
+	}
+
+	for(j=0; j<NUM_PRODUCERS; j++)
+    {
+        pthread_join(pThreadProducers[j], NULL);
+    }
+
+	for(j=0; j<NUM_CONSUMERS; j++)
+    {
+        pthread_join(pThreadConsumers[j], NULL);
+    }
+	 return 1;
+}
 
 void * thread_producer(void * pData){
 	//Noah - Makes sense for 1 producer but not sure how to make this work with multiple producers due to reading from a file 
@@ -280,39 +318,3 @@ struct Packet * readNextPacket (FILE * pTheFile, struct FilePcapInfo * pFileInfo
 
 	return pPacket;
 }
-/*
-char readPcapFile (struct FilePcapInfo * pFileInfo)
-{
-	int j;
-
-	//Noah
-	pthread_t *     pThreadProducers;
-    pthread_t *     pThreadConsumers;
-
-    // Allocate space for tracking the threads 
-    pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
-    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS);
-	KeepGoing = 1;//Reset for second iteration of reading file
-	
-	for(j = 0; j<NUM_PRODUCERS; j++)
-	{
-		pthread_create(pThreadProducers+j,0,thread_producer,pFileInfo);
-	}
-
-	for(j=0; j<NUM_CONSUMERS;j++){
-		pthread_create(pThreadConsumers+j,0,thread_consumer,NULL);
-	}
-
-	for(j=0; j<NUM_PRODUCERS; j++)
-    {
-        pthread_join(pThreadProducers[j], NULL);
-    }
-
-	for(j=0; j<NUM_CONSUMERS; j++)
-    {
-        pthread_join(pThreadConsumers[j], NULL);
-    }
-
-	return 1;
-}
-*/

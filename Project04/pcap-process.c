@@ -32,45 +32,6 @@ int    BigTableNextToReplace;
 
 /// Kylee // Hash table by Ben Hoyt https://benhoyt.com/writings/hash-table-in-c/
 // See LICENSE.txt, ht.c, and ht.h
-/* Hash table */
-/*
-int cmp(const void* a, const void* b) {
-    item* item_a = (item*)a;
-    item* item_b = (item*)b;
-    return strcmp(item_a->key, item_b->key);
-}
-
-item* binary_search(item* items, size_t size, const char* key) {
-    if (size + size < size) {
-        return NULL; // size too big; avoid overflow
-    }
-    size_t low = 0;
-    size_t high = size;
-    while (low < high) {
-        size_t mid = (low + high) / 2;
-        int c = strcmp(items[mid].key, key);
-        if (c == 0) {
-            return &items[mid];
-        }
-        if (c < 0) {
-            low = mid + 1; // eliminate low half of array
-        } else {
-            high = mid;    // eliminate high half of array
-        }
-    }
-    // Entire array has been eliminated, key not found.
-    return NULL;
-}
-
-item* linear_search(item* items, size_t size, const char* key) {
-    for (size_t i=0; i<size; i++) {
-        if (strcmp(items[i].key, key) == 0) {
-            return &items[i];
-        }
-    }
-    return NULL;
-}
-*/
 
 void initializeProcessingStats ()
 {
@@ -83,17 +44,6 @@ void initializeProcessingStats ()
 char initializeProcessing (int TableSize)
 {
     initializeProcessingStats();
-
-    /* Allocate our big table */
-    //BigTable = (struct PacketEntry *) malloc(sizeof(struct PacketEntry) * TableSize);
-    
-	 /*
-    if(BigTable == NULL)
-    {
-        printf("* Error: Unable to create the new table\n");
-        return 0;
-    }
-	 */
 	 
 	 // BigTable is now a HASH table
 	 BigTable = hcreate(TableSize);
@@ -103,15 +53,6 @@ char initializeProcessing (int TableSize)
 	 	 printf("* Error: Error creating the hash table\n");
 		 return 0;
 	 }
-
-	 /*
-    for(int j=0; j<TableSize; j++)
-    {
-        BigTable[j].ThePacket = NULL;
-        BigTable[j].HitCount  = 0;
-        BigTable[j].RedundantBytes = 0;
-    }
-	 */
 
     BigTableSize = TableSize;
     BigTableNextToReplace = 0;
@@ -255,6 +196,7 @@ void processPacket (struct Packet * pPacket)
 	 {
 	    // try to add to the hash table
 		 pointer2 = hsearch( entry, ENTER);
+         struct Packet * pData = (struct Packet *) pointer2->data; //Cast data to pPacket
 
 		 if (pointer2 == NULL) // could not add to the hash table
 		 {
@@ -263,9 +205,9 @@ void processPacket (struct Packet * pPacket)
 		 else
 		 {
             // do the bytes match up? 
-            for(int k=0; k<(pointer2->data).PayloadSize; k++)
+            for(int k=0; k<pData->PayloadSize; k++)
             {
-                if((pointer2->data).Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
+                if(pData->Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
                 {
                     // Nope - they are not the same
                     break;
