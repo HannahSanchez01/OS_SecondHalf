@@ -191,21 +191,24 @@ void processPacket (struct Packet * pPacket)
 
 	 ENTRY * pointer1 = hsearch( entry, FIND); 
 	 ENTRY * pointer2;
+     int k;
+     struct Packet * pData;
 	 
 	 if (pointer1 == NULL) // entry not found
 	 {
 	    // try to add to the hash table
 		 pointer2 = hsearch( entry, ENTER);
-         struct Packet * pData = (struct Packet *) pointer2->data; //Cast data to pPacket
 
 		 if (pointer2 == NULL) // could not add to the hash table
 		 {
 	    	 free(entry.key);
 		 }
-		 else
-		 {
-            // do the bytes match up? 
-            for(int k=0; k<pData->PayloadSize; k++)
+	 }
+     else
+     {
+        pData = (struct Packet *) pointer1->data; //Cast data to pPacket
+        // do the bytes match up? 
+            for(k=0; k<pData->PayloadSize; k++)
             {
                 if(pData->Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
                 {
@@ -213,13 +216,14 @@ void processPacket (struct Packet * pPacket)
                     break;
                 }
             }
-		 }
-	 }
-	 else
-	 {
-	 	 gPacketHitCount ++;
-		 gPacketHitBytes += pPacket->PayloadSize;
-	 }
+            if(k>=pData->PayloadSize)//Match
+            {
+                gPacketHitCount ++;
+                gPacketHitBytes += pPacket -> PayloadSize;
+                discardPacket(pPacket);
+                return;
+            }
+     }
 	 
 	 /*
     int j;

@@ -85,30 +85,32 @@ int main (int argc, char *argv[])
             theInfo.FileName = strdup(buf);
             printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
             readPcapFile(&theInfo);
-				free(theInfo.FileName);
+				//free(theInfo.FileName);
 
-           printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-           readPcapFile(&theInfo);
+        //    printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+        //    readPcapFile(&theInfo);
+           hdestroy();
 				
             printf("Summarizing the processed entries\n");
-            tallyProcessing();
+            //tallyProcessing();
         }
     }
     else{
         printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
         readPcapFile(&theInfo);
 		//free(theInfo.FileName);
+        hdestroy();
 
        printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
         readPcapFile(&theInfo);
+        hdestroy();
 			
 		  
         printf("Summarizing the processed entries\n");
-        tallyProcessing();
+        //tallyProcessing();
 		
     }
 
-	 hdestroy();
 
     /* Output the statistics */
 
