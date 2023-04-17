@@ -8,10 +8,50 @@ char * strdup(const char *s);
 
 #include <string.h>
 #include <search.h>
+#include <pthread.h>
 
 #include "pcap-read.h"
 #include "pcap-process.h"
 
+// For threading
+//#define NUM_PRODUCERS 1
+//#define NUM_CONSUMERS 1
+
+/*
+// moved noah's contributions from pcap-read to main
+char readPcapFile (struct FilePcapInfo * pFileInfo){
+	int j;
+
+	//Noah
+	pthread_t *     pThreadProducers;
+    pthread_t *     pThreadConsumers;
+
+    // Allocate space for tracking the threads 
+    pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
+    pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS);
+	KeepGoing = 1;//Reset for second iteration of reading file
+	
+	for(j = 0; j<NUM_PRODUCERS; j++)
+	{
+		pthread_create(pThreadProducers+j,0,thread_producer,pFileInfo);
+	}
+
+	for(j=0; j<NUM_CONSUMERS;j++){
+		pthread_create(pThreadConsumers+j,0,thread_consumer,NULL);
+	}
+
+	for(j=0; j<NUM_PRODUCERS; j++)
+    {
+        pthread_join(pThreadProducers[j], NULL);
+    }
+
+	for(j=0; j<NUM_CONSUMERS; j++)
+    {
+        pthread_join(pThreadConsumers[j], NULL);
+    }
+	 return 1;
+}
+*/
 
 int main (int argc, char *argv[])
 {
@@ -82,8 +122,8 @@ int main (int argc, char *argv[])
             printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
             readPcapFile(&theInfo);
 
-            printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-            readPcapFile(&theInfo);
+           // printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+            //readPcapFile(&theInfo);
 				
 				/*
             printf("Summarizing the processed entries\n");
@@ -95,8 +135,8 @@ int main (int argc, char *argv[])
         printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
         readPcapFile(&theInfo);
 
-        printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-        readPcapFile(&theInfo);
+       // printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+        //readPcapFile(&theInfo);
 			
 		  /*
         printf("Summarizing the processed entries\n");

@@ -245,8 +245,8 @@ void processPacket (struct Packet * pPacket)
 	 ENTRY entry;
 	 char string_data[5];
 	 sprintf(string_data, "%hhn", pPacket->Data);
-	 entry.key = string_data;
-	 entry.data = pPacket;
+	 entry.key = string_data;;
+	 entry.data = pPacket->Data;
 
 	 ENTRY * pointer1 = hsearch( entry, FIND); 
 	 ENTRY * pointer2;
@@ -263,15 +263,16 @@ void processPacket (struct Packet * pPacket)
 		 else
 		 {
             // do the bytes match up? 
-            for(int k=0; k<(pointer2->data).PayloadSize; k++)
+            for(int k=0; k<pointer2->ThePacket->PayloadSize; k++)
             {
-                if((pointer2->data).Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
+                if(pointer2->data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
                 {
                     // Nope - they are not the same
                     break;
                 }
             }
 		 }
+
 	 }
 	 else
 	 {
