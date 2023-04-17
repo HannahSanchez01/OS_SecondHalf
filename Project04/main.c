@@ -18,7 +18,7 @@ char * strdup(const char *s);
 
 int main (int argc, char *argv[])
 {
-	 int num_threads;
+	 int num_threads = 0;
     if(argc < 2 || argc > 4 || argc == 3) 
     {
         printf("Usage: redextract FileX\n");

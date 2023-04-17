@@ -17,7 +17,7 @@
 #include "pcap-read.h"
 #include "pcap-process.h"
 
-#define SHOW_DEBUG	1
+#define SHOW_DEBUG	0
 
 //Noah
 #define STACK_MAX_SIZE 10
@@ -43,7 +43,10 @@ char readPcapFile (struct FilePcapInfo * pFileInfo){
 	pthread_t *     pThreadProducers;
     pthread_t *     pThreadConsumers;
 
-	NUM_CONSUMERS = pFileInfo->numThreads-1;
+	if(pFileInfo->numThreads != 0)//Threads argument specified else uses optimal #
+	{
+		NUM_CONSUMERS = pFileInfo->numThreads-1;
+	}
 
     // Allocate space for tracking the threads 
     pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
@@ -139,6 +142,7 @@ void * thread_consumer(void * pData){
         	pthread_cond_wait(&PopWait, &StackLock);
 	 	}
     	if(StackSize>0){//Exit condition and there is something to consume
+			printf("Consumer\n");
         	pPacket = StackItems[StackSize-1]; // Remove
         	StackSize--;
 			processPacket(pPacket);//Do the work: Processes packets in pcap-process.c (Producer Null checks already)   

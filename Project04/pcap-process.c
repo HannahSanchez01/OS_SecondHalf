@@ -88,6 +88,8 @@ void processPacket (struct Packet * pPacket)
 
     PayloadOffset = 0;
 
+    printf("Packet Info: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pPacket->TimeCapture.tv_sec, (int) pPacket->TimeCapture.tv_usec, pPacket->LengthIncluded, pPacket->LengthOriginal);
+
     /* Do a bit of error checking */
     if(pPacket == NULL)
     {
