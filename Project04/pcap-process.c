@@ -245,19 +245,32 @@ void processPacket (struct Packet * pPacket)
 	 ENTRY entry;
 	 char string_data[5];
 	 sprintf(string_data, "%hhn", pPacket->Data);
-	 entry.key = string_data;;
-	 entry.data = pPacket->Data;
+	 entry.key = string_data;
+	 entry.data = pPacket;
 
-	 void* pointer = hsearch( entry, FIND); 
+	 ENTRY * pointer1 = hsearch( entry, FIND); 
+	 ENTRY * pointer2;
 	 
-	 if (pointer == NULL) // entry not found
+	 if (pointer1 == NULL) // entry not found
 	 {
 	    // try to add to the hash table
-		 pointer = hsearch( entry, ENTER);
+		 pointer2 = hsearch( entry, ENTER);
 
-		 if (pointer == NULL) // could not add to the hash table
+		 if (pointer2 == NULL) // could not add to the hash table
 		 {
 	    	 free(entry.key);
+		 }
+		 else
+		 {
+            // do the bytes match up? 
+            for(int k=0; k<(pointer2->data).PayloadSize; k++)
+            {
+                if((pointer2->data).Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
+                {
+                    // Nope - they are not the same
+                    break;
+                }
+            }
 		 }
 	 }
 	 else

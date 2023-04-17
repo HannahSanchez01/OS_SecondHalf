@@ -46,6 +46,9 @@ struct Packet * readNextPacket (FILE * pTheFile, struct FilePcapInfo * pFileInfo
 */
 char readPcapFile (struct FilePcapInfo * pFileInfo);
 
+void * thread_producer(void * pData);
+void * thread_consumer(void * pData);
+
 
 #endif
 

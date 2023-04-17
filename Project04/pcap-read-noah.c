@@ -20,9 +20,9 @@
 #define SHOW_DEBUG	1
 
 //Noah
+#define NUM_PRODUCERS 1
+#define NUM_CONSUMERS 1
 #define STACK_MAX_SIZE 10
-//#define NUM_PRODUCERS 1
-//#define NUM_CONSUMERS 1
 
 pthread_mutex_t StackLock;//Similar idea to milestone 4
 pthread_cond_t PushWait = PTHREAD_COND_INITIALIZER;
@@ -280,7 +280,8 @@ struct Packet * readNextPacket (FILE * pTheFile, struct FilePcapInfo * pFileInfo
 
 	return pPacket;
 }
-/*
+
+
 char readPcapFile (struct FilePcapInfo * pFileInfo)
 {
 	int j;
@@ -289,7 +290,7 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
 	pthread_t *     pThreadProducers;
     pthread_t *     pThreadConsumers;
 
-    // Allocate space for tracking the threads 
+    /* Allocate space for tracking the threads */
     pThreadProducers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_PRODUCERS); 
     pThreadConsumers = (pthread_t *) malloc(sizeof(pthread_t *) * NUM_CONSUMERS);
 	KeepGoing = 1;//Reset for second iteration of reading file
@@ -315,4 +316,3 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
 
 	return 1;
 }
-*/
