@@ -7,6 +7,9 @@
 #include <search.h> // Kylee
 // need to use hcreate, hsearch, and hdestroy
 
+/* for strdup due to C99 */
+char * strdup(const char *s);
+
 
 #include "pcap-process.h"
 //#include "ht.c" // 
@@ -33,6 +36,21 @@ int    BigTableNextToReplace;
 /// Kylee // Hash table by Ben Hoyt https://benhoyt.com/writings/hash-table-in-c/
 // See LICENSE.txt, ht.c, and ht.h
 
+long hash_function(char* str)//Source: https://www.digitalocean.com/community/tutorials/hash-table-in-c-plus-plus
+{
+    //printf("%p\n",str);
+    long i = 0;
+
+    for (int j = 0; j<strlen(str); j++)
+    {
+        //printf("%c\n",str[j]);
+        i += str[j];
+    }
+    //printf("%ld\n",strlen(str));
+
+    return i % BigTableSize;
+}
+
 void initializeProcessingStats ()
 {
     gPacketSeenCount = 0;
@@ -58,29 +76,6 @@ char initializeProcessing (int TableSize)
     BigTableNextToReplace = 0;
     return 1;
 }
-/*
-void resetAndSaveEntry (int nEntry)
-{
-    if(nEntry < 0 || nEntry >= BigTableSize)
-    {
-        printf("* Warning: Tried to reset an entry in the table - entry out of bounds (%d)\n", nEntry);
-        return;
-    }
-
-    if(BigTable[nEntry].ThePacket == NULL)
-    {
-        return;
-    }
-
-    gPacketHitCount += BigTable[nEntry].HitCount;
-    gPacketHitBytes += BigTable[nEntry].RedundantBytes;
-    discardPacket(BigTable[nEntry].ThePacket);
-
-    BigTable[nEntry].HitCount = 0;
-    BigTable[nEntry].RedundantBytes = 0;
-    BigTable[nEntry].ThePacket = NULL;
-}
-*/
 
 void processPacket (struct Packet * pPacket)
 {
@@ -173,7 +168,7 @@ void processPacket (struct Packet * pPacket)
         return;
     }
 
-    printf("  processPacket -> Found an IP packet that is TCP or UDP\n");
+    //printf("  processPacket -> Found an IP packet that is TCP or UDP\n");
 
     uint16_t    NetPayload;
 
@@ -185,14 +180,23 @@ void processPacket (struct Packet * pPacket)
     /* Step 2: Do any packet payloads match up? */
 	 
 	 ENTRY entry;
-	 char string_data[pPacket->SizeDataMax];
-	 sprintf(string_data, "%hhn", pPacket->Data);
-	 entry.key = string_data;
+     int k;
+     char buf[2048];//Noah: Copy contents of data to buffer for hashing
+     memset(&buf,0,2048);
+     for(k = 0; k<pPacket->PayloadSize; k++)
+     {
+        buf[k] = (char)pPacket->Data[k+PayloadOffset];
+     }
+     long hash = hash_function(buf);
+     //printf("%ld\n",hash);
+     char str[256];
+     sprintf(str, "%ld", hash);
+     //printf("%ld\n",strlen(str));
+     entry.key = strdup(str);
 	 entry.data = pPacket;
 
 	 ENTRY * pointer1 = hsearch( entry, FIND);
 	 ENTRY * pointer2;
-     int k;
      struct Packet * pData;
 	 
 	 if (pointer1 == NULL) // entry not found
@@ -200,112 +204,43 @@ void processPacket (struct Packet * pPacket)
 	    // try to add to the hash table
 		 pointer2 = hsearch( entry, ENTER);
          pData = (struct Packet *) pointer2->data;
-         printf("PACKET ENTER TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
+         //printf("PACKET ENTER TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
 
 		 if (pointer2 == NULL) // could not add to the hash table
 		 {
-	    	 free(entry.key);
+            entry.key = 0;
+            pointer2 = hsearch(entry,ENTER);//Replace first entry with new hash - eviction policy
+	    	free(entry.key);
 		 }
 	 }
      else
      {
         pData = (struct Packet *) pointer1->data; //Cast data to pPacket
-        printf("PACKET RETURNED FROM TABLE t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
-        printf("PACKET SEARCHED FROM TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pPacket->TimeCapture.tv_sec, (int) pPacket->TimeCapture.tv_usec, pPacket->LengthIncluded, pPacket->LengthOriginal);
+        //printf("PACKET RETURNED FROM TABLE t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
+        //printf("PACKET SEARCHED FROM TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pPacket->TimeCapture.tv_sec, (int) pPacket->TimeCapture.tv_usec, pPacket->LengthIncluded, pPacket->LengthOriginal);
         // do the bytes match up? 
+        if(pData->PayloadSize == pPacket->PayloadSize)
+        {
             for(k=0; k<pData->PayloadSize; k++)
             {
                 if(pData->Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
                 {
+                    //printf("%c,%c\n",pData->Data[k+PayloadOffset],pPacket->Data[k+PayloadOffset]);
                     // Nope - they are not the same
                     break;
                 }
             }
             if(k>=pData->PayloadSize)//Match
             {
-                printf("Match\n");
+                //printf("Match\n");
                 gPacketHitCount ++;
                 gPacketHitBytes += pPacket -> PayloadSize;
                 discardPacket(pPacket);
                 return;
             }
+        }
      }
-	 
-	 /*
-    int j;
-
-    for(j=0; j<BigTableSize; j++)
-    {
-        if(BigTable[j].ThePacket != NULL)
-        {
-            int k;
-
-            // Are the sizes the same? 
-            if(BigTable[j].ThePacket->PayloadSize != pPacket->PayloadSize)
-            {
-                continue;
-            }
-
-            // OK - same size - do the bytes match up? 
-            for(k=0; k<BigTable[j].ThePacket->PayloadSize; k++)
-            {
-                if(BigTable[j].ThePacket->Data[k+PayloadOffset] != pPacket->Data[k+PayloadOffset])
-                {
-                    // Nope - they are not the same
-                    break;
-                }
-            }
-
-            // Did we break out with a mismatch? 
-            if(k < BigTable[j].ThePacket->PayloadSize)
-            {
-                continue;
-            }
-            else 
-            {
-                // Whoot, whoot - the payloads match up
-                BigTable[j].HitCount++;
-                BigTable[j].RedundantBytes += pPacket->PayloadSize;
-
-                // The packets match so get rid of the matching one 
-                discardPacket(pPacket);
-                return;
-            }
-        }
-        else 
-        {
-            // We made it to an empty entry without a match 
-            
-            BigTable[j].ThePacket = pPacket;
-            BigTable[j].HitCount = 0;
-            BigTable[j].RedundantBytes = 0;
-            break;
-        }
-    }
-
-    // Did we search the entire table and find no matches? 
-    if(j == BigTableSize)
-    {
-        / Kick out the "oldest" entry by saving its entry to the global counters and 
-           free up that packet allocation 
-         
-        resetAndSaveEntry(BigTableNextToReplace);
-
-        // Take ownership of the packet 
-        BigTable[BigTableNextToReplace].ThePacket = pPacket;
-	 }
-	 */
 }
-
-/*
-void tallyProcessing ()
-{
-    for(int j=0; j<BigTableSize; j++)
-    {
-        resetAndSaveEntry(j);
-    }
-}
-*/
 
 
 

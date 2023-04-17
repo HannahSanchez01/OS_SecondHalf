@@ -33,8 +33,8 @@ int main (int argc, char *argv[])
          */
         printf("  -threads N       Number of threads to use (2 to 8)\n");
         /* Note that you do not need to handle this argument in your code */
-        printf("  -window  W       Window of bytes for partial matching (64 to 512)\n");
-        printf("       If not specified, the optimal setting will be used\n");
+        //printf("  -window  W       Window of bytes for partial matching (64 to 512)\n");
+        //printf("       If not specified, the optimal setting will be used\n");
         return -1;
     }
 	 else if ( argc == 4 ){ 
