@@ -11,13 +11,14 @@ char * strdup(const char *s);
 #include <pthread.h>
 
 #include "pcap-read.h"
+#include "pcap-read.c"
 #include "pcap-process.h"
 
 // For threading
-//#define NUM_PRODUCERS 1
-//#define NUM_CONSUMERS 1
+#define NUM_PRODUCERS 1
+#define NUM_CONSUMERS 1
 
-/*
+
 // moved noah's contributions from pcap-read to main
 char readPcapFile (struct FilePcapInfo * pFileInfo){
 	int j;
@@ -51,7 +52,7 @@ char readPcapFile (struct FilePcapInfo * pFileInfo){
     }
 	 return 1;
 }
-*/
+
 
 int main (int argc, char *argv[])
 {
@@ -121,6 +122,7 @@ int main (int argc, char *argv[])
             theInfo.FileName = strdup(buf);
             printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
             readPcapFile(&theInfo);
+				free(theInfo.FileName);
 
            // printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
             //readPcapFile(&theInfo);
@@ -134,6 +136,7 @@ int main (int argc, char *argv[])
     else{
         printf("MAIN: Attempting to read in the file named %s\n", theInfo.FileName);
         readPcapFile(&theInfo);
+		  free(theInfo.FileName);
 
        // printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
         //readPcapFile(&theInfo);

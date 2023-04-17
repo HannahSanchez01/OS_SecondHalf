@@ -21,8 +21,8 @@
 
 //Noah
 #define STACK_MAX_SIZE 10
-#define NUM_PRODUCERS 1
-#define NUM_CONSUMERS 1
+//#define NUM_PRODUCERS 1
+//#define NUM_CONSUMERS 1
 
 pthread_mutex_t StackLock;//Similar idea to milestone 4
 pthread_cond_t PushWait = PTHREAD_COND_INITIALIZER;
@@ -280,7 +280,7 @@ struct Packet * readNextPacket (FILE * pTheFile, struct FilePcapInfo * pFileInfo
 
 	return pPacket;
 }
-
+/*
 char readPcapFile (struct FilePcapInfo * pFileInfo)
 {
 	int j;
@@ -315,3 +315,4 @@ char readPcapFile (struct FilePcapInfo * pFileInfo)
 
 	return 1;
 }
+*/
