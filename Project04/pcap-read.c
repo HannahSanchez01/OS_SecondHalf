@@ -33,7 +33,7 @@ int  StackSize = 0;
 
 // For threading
 int NUM_PRODUCERS =  1;
-int NUM_CONSUMERS = 4;
+int NUM_CONSUMERS = 3;
 
 //Noah
 char readPcapFile (struct FilePcapInfo * pFileInfo){
