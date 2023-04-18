@@ -18,7 +18,7 @@ char * strdup(const char *s);
 
 int main (int argc, char *argv[])
 {
-	 int num_threads = 0;
+	 int num_threads = -1;
     if(argc < 2 || argc > 4 || argc == 3) 
     {
         printf("Usage: redextract FileX\n");
@@ -44,12 +44,23 @@ int main (int argc, char *argv[])
 				return -1;
 		  }
 	 	  num_threads = atoi(argv[3]);
+          if(num_threads == 0)
+          {
+            printf("Threads argument is not numerical\n");
+            return -1;
+          }
 		  if (num_threads < 2 || num_threads > 8){
             printf("  -threads N       Number of threads to use (2 to 8)\n");
 				return -1;
 		  }
 	 }
-		
+		FILE *fp = fopen(argv[1],"r");
+        if(fp == NULL)
+        {
+            printf("File does not exist or cannot be opened\n");
+            return -1;
+        }
+        fclose(fp);
 
     printf("MAIN: Initializing the table for redundancy extraction\n");
     initializeProcessing(DEFAULT_TABLE_SIZE);
@@ -69,12 +80,17 @@ int main (int argc, char *argv[])
     theInfo.EndianFlip = 0;
     theInfo.BytesRead = 0;
     theInfo.Packets = 0;
-    theInfo.MaxPackets = 5;
+    theInfo.MaxPackets = 0;
     theInfo.numThreads = num_threads;
 
     //Hannah
     if (theInfo.FileName[strlen(theInfo.FileName)-1] != 'p'){
         FILE *fp = fopen(theInfo.FileName, "r");
+        if(fp == NULL)
+        {
+            printf("File does not exist or cannot be opened\n");
+            return -1;
+        }
         char buf[256];
         while(1){
             fgets(buf, 256, fp);
@@ -87,9 +103,22 @@ int main (int argc, char *argv[])
             readPcapFile(&theInfo);
 				//free(theInfo.FileName);
 
-        //    printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
-        //    readPcapFile(&theInfo);
-           hdestroy();
+            printf("MAIN: Attempting to read in the file named %s again\n", theInfo.FileName);
+            readPcapFile(&theInfo);
+            hdestroy();
+            printf("Parsing of file %s complete\n", argv[1]);
+
+            printf("  Total Packets Parsed:    %d\n", gPacketSeenCount);
+            printf("  Total Bytes   Parsed:    %lu\n", (unsigned long) gPacketSeenBytes);
+            printf("  Total Packets Duplicate: %d\n", gPacketHitCount);
+            printf("  Total Bytes   Duplicate: %lu\n", (unsigned long) gPacketHitBytes);
+
+            float fPct;
+
+            fPct = (float) gPacketHitBytes / (float) gPacketSeenBytes * 100.0;
+
+            printf("  Total Duplicate Percent: %6.2f%%\n", fPct);
+            initializeProcessing(DEFAULT_TABLE_SIZE);
 				
             printf("Summarizing the processed entries\n");
             //tallyProcessing();
@@ -108,24 +137,20 @@ int main (int argc, char *argv[])
 		  
         printf("Summarizing the processed entries\n");
         //tallyProcessing();
+        printf("Parsing of file %s complete\n", argv[1]);
+
+        printf("  Total Packets Parsed:    %d\n", gPacketSeenCount);
+        printf("  Total Bytes   Parsed:    %lu\n", (unsigned long) gPacketSeenBytes);
+        printf("  Total Packets Duplicate: %d\n", gPacketHitCount);
+        printf("  Total Bytes   Duplicate: %lu\n", (unsigned long) gPacketHitBytes);
+
+        float fPct;
+
+        fPct = (float) gPacketHitBytes / (float) gPacketSeenBytes * 100.0;
+
+        printf("  Total Duplicate Percent: %6.2f%%\n", fPct);
 		
     }
-
-
-    /* Output the statistics */
-
-    printf("Parsing of file %s complete\n", argv[1]);
-
-    printf("  Total Packets Parsed:    %d\n", gPacketSeenCount);
-    printf("  Total Bytes   Parsed:    %lu\n", (unsigned long) gPacketSeenBytes);
-    printf("  Total Packets Duplicate: %d\n", gPacketHitCount);
-    printf("  Total Bytes   Duplicate: %lu\n", (unsigned long) gPacketHitBytes);
-
-    float fPct;
-
-    fPct = (float) gPacketHitBytes / (float) gPacketSeenBytes * 100.0;
-
-    printf("  Total Duplicate Percent: %6.2f%%\n", fPct);
 
 
     return 0;

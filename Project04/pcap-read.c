@@ -33,7 +33,7 @@ int  StackSize = 0;
 
 // For threading
 int NUM_PRODUCERS =  1;
-int NUM_CONSUMERS = 1;
+int NUM_CONSUMERS = 4;
 
 //Noah
 char readPcapFile (struct FilePcapInfo * pFileInfo){
@@ -43,7 +43,7 @@ char readPcapFile (struct FilePcapInfo * pFileInfo){
 	pthread_t *     pThreadProducers;
     pthread_t *     pThreadConsumers;
 
-	if(pFileInfo->numThreads != 0)//Threads argument specified else uses optimal #
+	if(pFileInfo->numThreads != -1)//Threads argument specified else uses optimal #
 	{
 		NUM_CONSUMERS = pFileInfo->numThreads-1;
 	}
