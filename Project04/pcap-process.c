@@ -97,7 +97,7 @@ void processPacket (struct Packet * pPacket)
         return;
     }
 
-    printf("STARTFUNC: processPacket (Packet Size %d)\n", pPacket->LengthIncluded);
+    //printf("STARTFUNC: processPacket (Packet Size %d)\n", pPacket->LengthIncluded);
 
     /* Step 1: Should we process this packet or ignore it? 
      *    We should ignore it if:
@@ -119,7 +119,7 @@ void processPacket (struct Packet * pPacket)
 
     if((pPacket->Data[12] != 0x08) || (pPacket->Data[13] != 0x00))
     {
-        printf("Not IP - ignoring...\n");
+        //printf("Not IP - ignoring...\n");
         discardPacket(pPacket);
         return;
     }
@@ -203,14 +203,15 @@ void processPacket (struct Packet * pPacket)
 	 {
 	    // try to add to the hash table
 		 pointer2 = hsearch( entry, ENTER);
-         pData = (struct Packet *) pointer2->data;
+         //pData = (struct Packet *) pointer2->data;
          //printf("PACKET ENTER TABLE: t=%ld.%08d of %d bytes long (%d on the wire) \n", (long int) pData->TimeCapture.tv_sec, (int) pData->TimeCapture.tv_usec, pData->LengthIncluded, pData->LengthOriginal);
 
 		 if (pointer2 == NULL) // could not add to the hash table
 		 {
-            entry.key = 0;
+            //printf("Table full?\n");
+            entry.key = "0";
             pointer2 = hsearch(entry,ENTER);//Replace first entry with new hash - eviction policy
-	    	free(entry.key);
+	    	//free(entry.key);
 		 }
 	 }
      else
