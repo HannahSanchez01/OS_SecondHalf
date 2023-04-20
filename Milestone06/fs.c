@@ -39,6 +39,28 @@ int fs_format()
 	return 0;
 }
 
+/*
+ * Scan a mounted filesystem and report on how the inodes
+ * and blocks are organized. If you can write this function,
+ * half the battle is over. After scanning and reporting
+ * upon the file system structures, the rest is easy.
+ * 
+ * Output example:
+ * superblock:
+		magic number is valid
+		1010 blocks on disk
+		101 blocks for inodes
+		12928 inodes total
+	inode 3:
+		size: 45 bytes
+		direct blocks: 103
+	inode 5:
+		size 81929 bytes
+		direct blocks: 105 109 .. ..
+		indirect block: 210
+		indirect data blocks: 211 212 213 214 ...
+ */
+
 void fs_debug()
 {
 	union fs_block block;
@@ -46,9 +68,42 @@ void fs_debug()
 	disk_read(0,block.data);
 
 	printf("superblock:\n");
+
+	if ( )  // check magic number validity
+	{
+		printf("magic number is valid\n");
+	}
+	else
+	{
+		printf("magic number is invalid\n");
+	}
+
 	printf("    %d blocks\n",block.super.nblocks);
 	printf("    %d inode blocks\n",block.super.ninodeblocks);
 	printf("    %d inodes\n",block.super.ninodes);
+
+
+   // Might need a for loop encasing //////////////// for inode
+	printf("inode %d:\n"); // print which inode?
+	printf("    size: %d bytes\n",); // print size?
+
+	printf("    direct blocks:");
+	// for loop to print all the direct blocks
+	// for (int i=0; i< ; i++)
+	// {
+	//		printf(" %d",);
+	// }
+	// printf("\n");
+	printf("    indirect blocks: %d",); // find indirect block
+	printf("    indirect data blocks:"); 
+	// for loop to print all the indirect data blocks
+	// for (int i=0; i< ; i++)
+	// {
+	//		printf(" %d",);
+	// }
+	// printf("\n");
+	// /////////////////////////////////////////////// end for inode
+	
 }
 
 int fs_mount()
