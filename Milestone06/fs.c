@@ -59,6 +59,22 @@ int fs_format()
 		direct blocks: 105 109 .. ..
 		indirect block: 210
 		indirect data blocks: 211 212 213 214 ...
+
+
+
+		60% Operate correctly given a proper file block of varying sizes.  
+		You do not need to assess whether or not the ratio of nodes to data 
+		is correct, only that the file system itself checks out.  Your 
+		output should match the expected output as described in the writeup 
+		for Project 6.  
+
+		30% Operate correctly without crashing on file blocks that are 
+		not set up correctly applying appropriate sanity checks to ensure 
+		robust operation.  For example, what if the various counts do not 
+		match up correctly (the disk block is 20 blocks but the super block 
+		says there are 1000 blocks)?  What if the magic number is incorrect?
+		What if a direct block or indirect block is out of range? Note that 
+		if the magic number fails, you can stop right there.  
  */
 
 void fs_debug()
@@ -67,42 +83,57 @@ void fs_debug()
 
 	disk_read(0,block.data);
 
+	/* SUPERBLOCK */
 	printf("superblock:\n");
 
-	if ( )  // check magic number validity
+   // TODO: magic num always 0?
+	if (block.super.magic == FS_MAGIC )  // check magic number validity
 	{
 		printf("magic number is valid\n");
 	}
 	else
 	{
 		printf("magic number is invalid\n");
+		printf("magic number=%d \n", block.super.magic);
+		return; // disk fails
 	}
 
 	printf("    %d blocks\n",block.super.nblocks);
+	// ninodeblocks should be 10% of nblocks, rounding up
 	printf("    %d inode blocks\n",block.super.ninodeblocks);
 	printf("    %d inodes\n",block.super.ninodes);
 
 
+	/* INODE */
    // Might need a for loop encasing //////////////// for inode
-	printf("inode %d:\n"); // print which inode?
-	printf("    size: %d bytes\n",); // print size?
+	for (int i=0; i< INODES_PER_BLOCK; i++)
+	{
+		if (block.inode[i].isvalid)
+		{
+			printf("inode %d:\n",i); // print which inode?
+			printf("    size: %d bytes\n",block.inode[i].size); // print size?
+			printf("    direct blocks:");
+			//for loop to print all the direct blocks
+			for (int j=0; j< POINTERS_PER_INODE; j++)
+			{
+				printf(" %d",block.inode[i].direct[j]);
+			}
+			printf("\n"); // newline
 
-	printf("    direct blocks:");
-	// for loop to print all the direct blocks
-	// for (int i=0; i< ; i++)
-	// {
-	//		printf(" %d",);
-	// }
-	// printf("\n");
-	printf("    indirect blocks: %d",); // find indirect block
-	printf("    indirect data blocks:"); 
-	// for loop to print all the indirect data blocks
-	// for (int i=0; i< ; i++)
-	// {
-	//		printf(" %d",);
-	// }
-	// printf("\n");
-	// /////////////////////////////////////////////// end for inode
+			if (block.inode[i].indirect)
+			{
+				printf("    indirect blocks: %d",block.inode[i].indirect); // find indirect block
+				printf("    indirect data blocks:"); // TODO
+				// for loop to print all the indirect data blocks
+				// for (int i=0; i< ; i++)
+				// {
+				//		printf(" %d",);
+				// }
+				// printf("\n");
+				// /////////////////////////////////////////////// end for inode
+			}
+		}
+	}
 	
 }
 
