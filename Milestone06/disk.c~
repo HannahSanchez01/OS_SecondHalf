@@ -1,0 +1,118 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+
+#include "disk.h"
+
+#define DISK_MAGIC 0xdeadbeef
+
+static FILE *diskfile;
+static int nblocks=0;
+static int nreads=0;
+static int nwrites=0;
+
+int disk_init( const char *filename, int n )
+{
+	diskfile = fopen(filename,"r+");
+	if(!diskfile) diskfile = fopen(filename,"w+");
+	if(!diskfile) return 0;
+
+	ftruncate(fileno(diskfile),n*DISK_BLOCK_SIZE);
+
+	nblocks = n;
+	nreads = 0;
+	nwrites = 0;
+
+	return 1;
+}
+
+int disk_size()
+{
+	return nblocks;
+}
+
+static void sanity_check( int blocknum, const void *data, struct disk *d)
+{
+/*
+	if(blocknum<0) {
+		printf("ERROR: blocknum (%d) is negative!\n",blocknum);
+		abort();
+	}
+
+	if(blocknum>=nblocks) {
+		printf("ERROR: blocknum (%d) is too big!\n",blocknum);
+		abort();
+	}
+
+	if(!data) {
+		printf("ERROR: null data pointer!\n");
+		abort();
+	}
+*/
+	return d && data && (d->blocks > blocknum); // if any of these are false, it fails
+}
+
+void disk_read( int blocknum, char *data )
+{
+	//sanity_check(blocknum,data);
+
+	fseek(diskfile,blocknum*DISK_BLOCK_SIZE,SEEK_SET);
+
+	if(fread(data,DISK_BLOCK_SIZE,1,diskfile)==1) {
+		nreads++;
+	} else {
+		printf("ERROR: couldn't access simulated disk: %s\n",strerror(errno));
+		abort();
+	}
+	if (!(nreads % DISK_BLOCK_SIZE)){
+		printf("ERROR: failed to read block %d\n", blocknum);
+		abort();
+	}
+}
+
+void disk_write( int blocknum, const unsigned char *data, struct disk *d )
+{
+/*
+ struct disk *d was missing from the functions
+	sanity_check(blocknum,data);
+
+	fseek(diskfile,blocknum*DISK_BLOCK_SIZE,SEEK_SET);
+
+	if(fwrite(data,DISK_BLOCK_SIZE,1,diskfile)==1) {
+		nwrites++;
+	} else {
+		printf("ERROR: couldn't access simulated disk: %s\n",strerror(errno));
+		abort();
+	}
+*/
+	if (sanity_check(d, blocknum, data)) { // returns a bool and needs three arguments
+		// seek to block (lseek takes an fd), and check if it works
+			// fseek -- file pointer returns 0 on sucess whereas lseek returns where it is
+		// write to block and check if it works
+		// if it worked (or u dont need the if)	 update number of writes and return block size
+	}
+	// otherwise, it failed the sanity check so it failed
+	return DISK_FAILURE;
+}
+
+void disk_close(struct disk *d)
+{
+/*
+	if(diskfile) {
+		printf("%d disk block reads\n",nreads);
+		printf("%d disk block writes\n",nwrites);
+		fclose(diskfile);
+		diskfile = 0;
+	}
+*/
+
+	// close the fd (close(d->fd))
+	// report the number of reads and writes
+	// printf("%ld disk block reads\n", d->reads);
+	// printf("%ld disk block writes\n", d->writes);
+	// free the disk (free(d))
+}
+
