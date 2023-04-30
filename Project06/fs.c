@@ -120,13 +120,13 @@ int fs_mount()
 				for (int k=0; k< POINTERS_PER_INODE; k++)//Loop through direct pointers
 				{
 					if (block.inode[j].direct[k]){
-						bitmap[(int)block.inode[j].direct[k]] = 1;//block is in use by direct pointer
+						bitmap[block.inode[j].direct[k]] = 1;//block is in use by direct pointer
 					}
 				}
 
 				if (block.inode[j].indirect)//There is indirection
 				{
-					bitmap[(int)block.inode[j].indirect] = 1;//Indirect block in use
+					bitmap[block.inode[j].indirect] = 1;//Indirect block in use
 					disk_read(thedisk, block.inode[j].indirect, block.data);
 					for (int k=0; k<POINTERS_PER_BLOCK; k++){// find indirect blocks
 						if (block.pointers[k]){
@@ -138,14 +138,6 @@ int fs_mount()
 			}
 		}
 	}
-	for(int i = 0; i<block.super.nblocks; i++)
-	{
-		if(bitmap[i])
-		{
-			printf("%d ",i);
-		}
-	}
-	printf("\n");
 	isMounted = 1;//Noah - Successful mount - can't do another mount
 	return 1;
 }
