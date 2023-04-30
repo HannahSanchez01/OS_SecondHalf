@@ -276,7 +276,34 @@ int fs_delete( int inumber )
 
 int fs_getsize( int inumber )
 {
-	return 0;
+	if(!isMounted)//Can't get size on unmounted disk
+	{
+		printf("getsize: No mounted disk\n");
+		return -1;
+	}
+	union fs_block superblock;//Noah - Need superblock information to get where inode is in blocks
+	disk_read(thedisk,0,superblock.data);
+
+	if(inumber > superblock.super.ninodes || inumber <= 0)//Invalid inumber - either negative, 0, or larger than total inodes
+	{
+		printf("getsize: Invalid inumber\n");
+		return -1;
+	}
+
+	int blockNum = inumber / INODES_PER_BLOCK;//Noah - Which inode block is inumber in?
+	int blockIndex = inumber - (INODES_PER_BLOCK*blockNum);
+	blockNum++;//inode blocks start at block 1 due to superblock being block 0;
+
+	union fs_block inodeblock;
+	disk_read(thedisk,blockNum,inodeblock.data);
+
+	if(!inodeblock.inode[blockIndex].isvalid)//Noah - can't getsize of invalid inode
+	{
+		printf("getsize: inumber is not valid\n");
+		return -1;
+	}
+
+	return inodeblock.inode[blockIndex].size;
 }
 
 int fs_read( int inumber, char *data, int length, int offset )
