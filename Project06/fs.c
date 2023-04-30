@@ -26,7 +26,7 @@ int fs_format()
 		return 0;
 	}
 
-	union fs_block superblock;//Write new superblock
+	union fs_block superblock;//Noah - Write new superblock
 	superblock.super.magic = FS_MAGIC;//Assign Magic
 
 	int size = disk_size();//Get number of blocks on disk
@@ -44,7 +44,7 @@ int fs_format()
 
 	disk_write(thedisk,0,superblock.data);//Write new superblock
 
-	//Write all inodes - invalid all inodes
+	//Noah- Write all inodes - invalid all inodes
 	union fs_block inodeblock;
 
 		for (int i=1; i< inodeblocks+1; i++)
@@ -63,7 +63,7 @@ int fs_format()
 				inodeblock.inode[j].indirect = 0;//No indirection
 			}
 		}
-		disk_write(thedisk,i,inodeblock.data);//Write each inode block
+		disk_write(thedisk,i,inodeblock.data);//Noah - Write each inode block
 	}
 	return 1;
 }
@@ -188,7 +188,7 @@ int fs_mount()
 
 int fs_create()
 {
-	if(!isMounted)
+	if(!isMounted)//Noah - Can't create with unmounted disk
 	{
 		printf("Create: No mounted disk\n");
 		return 0;
@@ -196,7 +196,7 @@ int fs_create()
 	union fs_block block;//Need superblock to know how many inode blocks
 	disk_read(thedisk,0,block.data);
 
-	int inumber;//Need to find empty inode
+	int inumber;//Noah - Need to find empty inode
 	union fs_block inodeblock;
 	for(int i=1; i< block.super.ninodeblocks+1; i++)
 	{
@@ -223,7 +223,55 @@ int fs_create()
 
 int fs_delete( int inumber )
 {
-	return 0;
+	if(!isMounted)//Noah - can't delete on an unmounted disk
+	{
+		printf("Delete: No mounted disk\n");
+		return 0;
+	}
+
+	union fs_block superblock;//Noah - Need superblock information to get where inode is in blocks
+	disk_read(thedisk,0,superblock.data);
+
+	if(inumber > superblock.super.ninodes || inumber <= 0)//Invalid inumber - either negative, 0, or larger than total inodes
+	{
+		printf("Delete: Invalid inumber\n");
+		return 0;
+	}
+
+	int blockNum = inumber / INODES_PER_BLOCK;//Noah - Which inode block is inumber in?
+	int blockIndex = inumber - (INODES_PER_BLOCK*blockNum);
+	blockNum++;//inode blocks start at block 1 due to superblock being block 0;
+
+	union fs_block inodeblock;
+	disk_read(thedisk,blockNum,inodeblock.data);//Read correct inode block where inode is
+
+	if(!inodeblock.inode[blockIndex].isvalid)//Noah - can't delete invalid inode
+	{
+		printf("Delete: inumber is not valid\n");
+		return 0;
+	}
+
+	inodeblock.inode[blockIndex].isvalid = 0;//Mark as invalid
+
+	for(int j = 0; j<POINTERS_PER_INODE; j++)//Noah - Free direct pointers in inode
+	{
+		if(inodeblock.inode[blockIndex].direct[j])
+		{
+			bitmap[inodeblock.inode[blockIndex].direct[j]] = 0;//Mark as free in bitmap
+		}
+	}
+
+	if(inodeblock.inode[blockIndex].indirect)//Noah - There are indirect pointers to free
+	{
+		for (int k=0; k<POINTERS_PER_BLOCK; k++){
+			if (inodeblock.pointers[k]){
+				bitmap[inodeblock.pointers[k]] = 0;//Free indirect blocks in bitmap
+			}
+		}
+	}
+
+	disk_write(thedisk,blockNum,inodeblock.data);//Noah - Write back to disk
+	return 1;
 }
 
 int fs_getsize( int inumber )
