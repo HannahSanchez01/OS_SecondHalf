@@ -188,6 +188,36 @@ int fs_mount()
 
 int fs_create()
 {
+	if(!isMounted)
+	{
+		printf("Create: No mounted disk\n");
+		return 0;
+	}
+	union fs_block block;//Need superblock to know how many inode blocks
+	disk_read(thedisk,0,block.data);
+
+	int inumber;//Need to find empty inode
+	union fs_block inodeblock;
+	for(int i=1; i< block.super.ninodeblocks+1; i++)
+	{
+		disk_read(thedisk, i, inodeblock.data);
+		for (int j=1; j<INODES_PER_BLOCK; j++){
+			if (!inodeblock.inode[j].isvalid)//Found an invalid inode - make it valid
+			{
+				inumber = (INODES_PER_BLOCK * (i-1)) + j;//Get unique inumber
+				inodeblock.inode[j].isvalid = 1;//Valid inode
+				inodeblock.inode[j].size = 0;//Make size 0
+				for(int k = 0; k<POINTERS_PER_INODE; k++)//Don't point to any existing direct/indirect blocks
+				{
+					inodeblock.inode[j].direct[k] = 0;
+				}
+				inodeblock.inode[j].indirect = 0;
+				disk_write(thedisk,i,inodeblock.data);
+				return inumber;
+			}
+		}
+	}
+	printf("Create: Could not find empty inode\n");
 	return 0;
 }
 
