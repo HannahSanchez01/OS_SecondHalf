@@ -21,7 +21,51 @@ int isMounted = 0;
 
 int fs_format()
 {
-	return 0;
+	if(isMounted){//Noah - Cannot format if disk mounted
+		printf("Format: Disk already mounted\n");
+		return 0;
+	}
+
+	union fs_block superblock;//Write new superblock
+	superblock.super.magic = FS_MAGIC;//Assign Magic
+
+	int size = disk_size();//Get number of blocks on disk
+	superblock.super.nblocks = size;
+
+	int inodeblocks = size/10;
+	if(size%10 != 0)//Round up - there is a remainder
+	{
+		inodeblocks++;
+	}
+	superblock.super.ninodeblocks = inodeblocks;
+
+	int inodes = inodeblocks * INODES_PER_BLOCK;
+	superblock.super.ninodes = inodes;
+
+	disk_write(thedisk,0,superblock.data);//Write new superblock
+
+	//Write all inodes - invalid all inodes
+	union fs_block inodeblock;
+
+		for (int i=1; i< inodeblocks+1; i++)
+	{
+		for (int j=0; j<INODES_PER_BLOCK; j++){
+			if (inodeblock.inode[j].isvalid)
+			{
+				inodeblock.inode[j].isvalid = 0;//Set to invalid
+
+				for (int k=0; k< POINTERS_PER_INODE; k++)
+				{
+					if (inodeblock.inode[j].direct[k]){//Point to no blocks
+						inodeblock.inode[j].direct[k] = 0;
+					}
+				}
+				inodeblock.inode[j].indirect = 0;//No indirection
+			}
+		}
+		disk_write(thedisk,i,inodeblock.data);//Write each inode block
+	}
+	return 1;
 }
 
 void fs_debug()
