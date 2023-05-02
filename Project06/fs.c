@@ -108,7 +108,7 @@ void fs_debug()
 
 				if (block.inode[j].indirect)
 				{
-					printf("    indirect blocks: %d\n",block.inode[j].indirect); // find indirect block
+					printf("    indirect block: %d\n",block.inode[j].indirect); // find indirect block
 					printf("    indirect data blocks: "); 
 					disk_read(thedisk, block.inode[j].indirect, block.data);
 					for (int k=0; k<POINTERS_PER_BLOCK; k++){
@@ -308,7 +308,80 @@ int fs_getsize( int inumber )
 
 int fs_read( int inumber, char *data, int length, int offset )
 {
-	return 0;
+	//Hannah
+	if(!isMounted)
+	{
+		printf("fs_read: No mounted disk\n");
+		return 0;
+	}
+	union fs_block superblock;
+	disk_read(thedisk,0,superblock.data);
+
+	if(inumber > superblock.super.ninodes || inumber <= 0)
+	{
+		printf("fs_read: Invalid inumber\n");
+		return 0;
+	}
+
+	int blockNum = (inumber / INODES_PER_BLOCK) + 1;
+	int blockIndex = inumber % INODES_PER_BLOCK;
+
+	union fs_block inodeblock;
+	disk_read(thedisk,blockNum,inodeblock.data);
+
+	if(!inodeblock.inode[blockIndex].isvalid)
+	{
+		printf("fs_read: inumber is not valid\n");
+		return 0;
+	}
+
+	if (offset < 0){ //offset has to be inside block
+		printf("fs_read: Invalid offset\n");
+		return 0;
+	}
+	if (length < 0){ //length must be positive
+		printf("fs_read: Invalid length\n");
+		return 0;
+	}
+
+	char* buf = malloc(length+1); //buffer to check number of bytes
+	data[0] = '\0'; //zero out data pointer so we can fill it
+	union fs_block datablock; //block to hold data
+	int numBytesRead; //for return
+
+	if (offset / BLOCK_SIZE < 3){ // direct pointers in inode
+		if (inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE]){
+			disk_read(thedisk,inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE], datablock.data);
+			memcpy(buf, &datablock.data[offset % BLOCK_SIZE], length); //try to read "length" bytes from position "offset"
+			numBytesRead = strlen(buf); //find actual number of bytes
+			strncat(data, buf, numBytesRead); //copy to "data"
+		}
+		else{
+			printf("fs_read: Invalid offset (block does not exist)\n");
+			return 0;
+		}
+	}
+	else{ // indirect pointer in inode
+		if (inodeblock.inode[blockIndex].indirect){ // check if indirect exists
+			disk_read(thedisk, inodeblock.inode[blockIndex].indirect, datablock.data); //read for pointers
+			if (datablock.pointers[(offset / BLOCK_SIZE) - 3]){ //check if pointer exists
+				disk_read(thedisk, datablock.pointers[(offset / BLOCK_SIZE) - 3], datablock.data); //read data at pointer
+				memcpy(buf, &datablock.data[offset % BLOCK_SIZE], length); //try to read "length" bytes from position "offset"
+				numBytesRead = strlen(buf); //find actual number of bytes
+				strncat(data, buf, numBytesRead); //copy to "data"
+			}
+			else{
+				printf("fs_read: Invalid offset (block does not exist)\n");
+				return 0;
+			}
+		}
+		else{
+			printf("fs_read: Invalid offset (block does not exist)\n");
+			return 0;
+		}
+	}
+	free(buf);
+	return numBytesRead;
 }
 
 int fs_write( int inumber, const char *data, int length, int offset )
