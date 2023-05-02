@@ -152,11 +152,13 @@ int fs_mount()
 	}
 
 	//Noah - Allocate space based on # blocks
-	bitmap = (int*)malloc(block.super.nblocks * sizeof(int));
+	bitmap = malloc(block.super.nblocks * sizeof(int));
 	memset(bitmap,0,block.super.nblocks);
+	bitmap[0] = 1; //superblock header is reserved
 
 	for (int i=1; i< block.super.ninodeblocks+1; i++)//Loop through each inode block
-	{
+	{	
+		bitmap[i] = 1; //inode blocks are reserved
 		disk_read(thedisk, i, block.data);
 		for (int j=0; j<INODES_PER_BLOCK; j++){//Loop through inodes in each block
 			if (block.inode[j].isvalid)//Found valid inode - find which blocks (direct or indirect) are used by inode
@@ -386,5 +388,130 @@ int fs_read( int inumber, char *data, int length, int offset )
 
 int fs_write( int inumber, const char *data, int length, int offset )
 {
-	return 0;
+	//Hannah
+	if(!isMounted)
+	{
+		printf("fs_write: No mounted disk\n");
+		return 0;
+	}
+	union fs_block superblock;
+	disk_read(thedisk,0,superblock.data);
+
+	if(inumber > superblock.super.ninodes || inumber <= 0)
+	{
+		printf("fs_write: Invalid inumber\n");
+		return 0;
+	}
+
+	int blockNum = (inumber / INODES_PER_BLOCK) + 1;
+	int blockIndex = inumber % INODES_PER_BLOCK;
+
+	union fs_block inodeblock;
+	disk_read(thedisk,blockNum,inodeblock.data);
+
+	if(!inodeblock.inode[blockIndex].isvalid)
+	{
+		printf("fs_write: inumber is not valid\n");
+		return 0;
+	}
+
+	if (offset < 0){ //offset has to be inside block
+		printf("fs_write: Invalid offset\n");
+		return 0;
+	}
+	if (length < 0){ //length must be positive
+		printf("fs_write: Invalid length\n");
+		return 0;
+	}
+
+	union fs_block datablock; //block to hold data
+	int numBytesWrote = 0; //for return
+	int newBlockNum;
+	while (length > 0){
+		if (offset / BLOCK_SIZE < 3){ // direct pointers in inode
+			if (!inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE]){ //check if block exists
+				newBlockNum=-1; //if not, find new block
+				for (int i=1; i<superblock.super.nblocks; i++){
+					if (bitmap[i] == 0){
+						newBlockNum = i;
+						bitmap[i] = 1;
+						break;
+					}
+				}
+				if (newBlockNum == -1){ //no empty blocks found
+					printf("fs_write: no blocks available\n");
+					return 0;
+				}
+				inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE] = newBlockNum;
+				disk_write(thedisk, blockNum, inodeblock.data);
+			}	
+			disk_read(thedisk,inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE], datablock.data);
+			if (length > (BLOCK_SIZE - (offset % BLOCK_SIZE))){
+				memcpy(&datablock.data[offset % BLOCK_SIZE], data + numBytesWrote, BLOCK_SIZE - (offset % BLOCK_SIZE));
+				disk_write(thedisk, inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE], datablock.data);
+				numBytesWrote += BLOCK_SIZE - (offset % BLOCK_SIZE);
+				length -= BLOCK_SIZE - (offset % BLOCK_SIZE);
+				offset += BLOCK_SIZE - (offset % BLOCK_SIZE);
+			}
+			else{
+				memcpy(&datablock.data[offset % BLOCK_SIZE], data + numBytesWrote, length);
+				disk_write(thedisk, inodeblock.inode[blockIndex].direct[offset / BLOCK_SIZE], datablock.data);
+				numBytesWrote += length;
+				length = 0;
+			}
+		}
+		else{ // indirect pointer in inode
+			if (!inodeblock.inode[blockIndex].indirect){ // check if indirect exists
+				newBlockNum=-1; //if not, find new block
+				for (int i=0; i<superblock.super.nblocks; i++){
+					if (bitmap[i] == 0){
+						newBlockNum = i;
+						bitmap[i] = 1;
+						break;
+					}
+				}
+				if (newBlockNum == -1){ //no empty blocks found
+					printf("fs_write: no blocks available\n");
+					return 0;
+				}
+				inodeblock.inode[blockIndex].indirect = newBlockNum;
+				disk_write(thedisk, blockNum, inodeblock.data);
+			}
+			disk_read(thedisk, inodeblock.inode[blockIndex].indirect, datablock.data); //read for pointers
+			if (!datablock.pointers[(offset / BLOCK_SIZE) - 3]){ //check if pointer exists
+				newBlockNum=-1; //if not, find new block
+				for (int i=0; i<superblock.super.nblocks; i++){
+					if (bitmap[i] == 0){
+						newBlockNum = i;
+						bitmap[i] = 1;
+						break;
+					}
+				}
+				if (newBlockNum == -1){ //no empty blocks found
+					printf("fs_write: no blocks available\n");
+					return 0;
+				}
+				datablock.pointers[(offset / BLOCK_SIZE) - 3] = newBlockNum;
+				disk_write(thedisk, inodeblock.inode[blockIndex].indirect, datablock.data);
+			}
+			disk_read(thedisk, datablock.pointers[(offset / BLOCK_SIZE) - 3], datablock.data);
+			newBlockNum = datablock.pointers[(offset / BLOCK_SIZE) - 3];	
+			if (length > (BLOCK_SIZE - (offset % BLOCK_SIZE))){
+				memcpy(&datablock.data[offset % BLOCK_SIZE], data + numBytesWrote, BLOCK_SIZE - (offset % BLOCK_SIZE));
+				disk_write(thedisk, newBlockNum, datablock.data);
+				numBytesWrote += BLOCK_SIZE - (offset % BLOCK_SIZE);
+				length -= BLOCK_SIZE - (offset % BLOCK_SIZE);
+				offset += BLOCK_SIZE - (offset % BLOCK_SIZE);
+			}
+			else{
+				memcpy(&datablock.data[offset % BLOCK_SIZE], data + numBytesWrote, length);
+				disk_write(thedisk, newBlockNum, datablock.data);
+				numBytesWrote += length;
+				length = 0;
+			}
+		}
+	}
+	inodeblock.inode[blockIndex].size += numBytesWrote;
+	disk_write(thedisk, blockNum, inodeblock.data);
+	return numBytesWrote;
 }
